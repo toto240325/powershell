@@ -232,11 +232,8 @@ function mainJob() {
 	
 	$wshell = New-Object -ComObject Wscript.Shell
 	
-	# setup vars
-	$user = 'root'
-	$pass = 'Toto!'
-	$database = 'test'
-	$MySQLHost = 'localhost'
+	# setup vars (get $user, $pass, $database, $mySqlhost)
+	. '.\params.ps1"
 	 
 	# Connect to MySQL Database
 	$conn = ConnectMySQL $user $pass $MySQLHost $database
