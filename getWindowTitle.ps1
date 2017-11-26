@@ -1,3 +1,7 @@
+<#
+!!!!!!!! powershell get-content -tail 10 -wait d:\temp\error.log
+#>
+
 
 [CmdletBinding()]
 Param(
@@ -212,7 +216,8 @@ function mainJob() {
 	} elseif ($env:computername -eq "H171412649") {
 	#[native.win]::ShowWindow($mainWindowHandle,0)
 	} elseif ($env:computername -eq "MYPC3") {
-	$tmp=[native.win]::ShowWindow($mainWindowHandle,0)
+	#$tmp=[native.win]::ShowWindow($mainWindowHandle,5) # 5: display window 
+	$tmp=[native.win]::ShowWindow($mainWindowHandle,0) # 0: hide window
 	}
 
 	
@@ -233,7 +238,8 @@ function mainJob() {
 	$wshell = New-Object -ComObject Wscript.Shell
 	
 	# setup vars (get $user, $pass, $database, $mySqlhost)
-	. '.\params.ps1"
+	#. '.\params.ps1'
+	. "$PSScriptRoot\params.ps1"
 	 
 	# Connect to MySQL Database
 	$conn = ConnectMySQL $user $pass $MySQLHost $database
@@ -257,10 +263,14 @@ function mainJob() {
 			$Process = Get-Process | ? {$_.MainWindowHandle -eq $activeHandle}
 			
 			#check if this is a real process or a system (?) process
-			if ($Process) {
-				
-				$title  = $Process.MainWindowTitle
+			$title = ""
+			if ($Process) { 
+				$title  = $Process.MainWindowTitle.trim() 
+			}
+			if ($title -ne "") {
+				#write-host "test : ---"      $title     "+++"
 				$cpu = $Process.TotalProcessorTime.TotalSeconds
+				#write-host "cpu : " + $cpu
 				# let's reset the CPU counter if the title of main windows changed
 				if ($title -ne $prevTitle) { $prevCpu = $cpu } 
 				$deltaCpu = $cpu - $prevCpu
@@ -269,10 +279,10 @@ function mainJob() {
 				#$Process | select ProcessName
 				#$Process | Select @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
 				#write-host "test1.3"
-						
 			} 
 			else
 			{
+				#write-host "title is empty"
 				$title = ""
 				$cpu = 0
 				$deltaCpu = 0
@@ -456,7 +466,7 @@ try
 	if ($wasCreated)
 	{            
 		mainJob;
-		} else {
+	} else {
 		#just exit if there is already a script running
 		write-host "Script is already running, so I exit"
 
@@ -466,6 +476,11 @@ try
 		#$mutant.WaitOne();
 	}
 }
+catch {
+	$errorMsg = "$($datetime) - Error during main job ? More Info: $($_)" 
+	$errorMsg | out-file -append -filepath $errorFile
+	Write-host $errorMsg
+} 
 finally
 {       
 	
