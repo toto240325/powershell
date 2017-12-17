@@ -16,6 +16,10 @@ public static extern IntPtr GetForegroundWindow();
 }
 "@
 
+$datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+	$outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
+write-host "$datetime starting..."
+
 
 
 <#
@@ -96,6 +100,8 @@ function myQuery($conn) {
 }
 #------------------------------------------------------------------------------------ 
 function WriteMySQLQuery($conn, [string]$query) {
+	
+	
 	 
 	  $command = $conn.CreateCommand()
 	  $command.CommandText = $query
@@ -222,8 +228,6 @@ function mainJob() {
 	}
 
 	
-	
-	
 	#to make the script window visible again
 	#   powershell_ise
 	#   Add-Type -Name win -MemberDefinition '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle, int state);' -Namespace native
@@ -260,6 +264,7 @@ function mainJob() {
 	while($true)
 	{
 		try {
+			# get info on process currently executing the foreground window
 			$ActiveHandle = [userWindows]::GetForegroundWindow()
 			$Process = Get-Process | ? {$_.MainWindowHandle -eq $activeHandle}
 			
@@ -291,22 +296,21 @@ function mainJob() {
 			
 			$prevTitle = $title
 			$prevCpu = $cpu
-		
-		
 		} catch {
 			$errorMsg = "$($datetime) - test Failed xxx to get active Window details. More Info: $($_)" 
 			$errorMsg | out-file -append -filepath $errorFile
 			Write-host $errorMsg
 			Start-Sleep -s 5
-
 		}
-		#write-host "test1"
+		
+		
 		#$allWindowsTitles +=$title
 		$dateTime = Get-Date
 		
 		#$Process | select ProcessName
 		$maxlen = 30
 		
+		# getting window title and storing it in a CSV file
 		try {
 			$line = ""
 			$line = $line + "{0}"       -f $dateTime
@@ -323,20 +327,25 @@ function mainJob() {
 			$errorMsg | out-file -append -filepath $errorFile
 			Write-host $errorMsg
 		} 
-		
-		$dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-		
-		
-		if ($conn.state -eq "Open") {
-			#write-host "conn is open"
-			} else {
-			#write-host "conn is not open"
-			$conn = ConnectMySQL $user $pass $MySQLHost $database
-		}
-		
-		$iRowsInsert = myInsert2 $conn $dateStr $title $cpu $delay
 
-		
+
+		# storing window title in database
+		try {
+			$dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+			if ($conn.state -eq "Open") {
+				#write-host "conn is open"
+				} else {
+				#write-host "conn is not open"
+				$conn = ConnectMySQL $user $pass $MySQLHost $database
+			}
+			$iRowsInsert = myInsert2 $conn $dateStr $title $cpu $delay
+		}
+		catch {
+			$errorMsg = "$($datetime) - Error when storing in database. More Info: $($_)" 
+			$errorMsg | out-file -append -filepath $errorFile
+			Write-host $errorMsg
+		} 
+				
 		$titleFound = 0
 	    foreach($t in $titlesToCheck) {
 			#write-host "result of test for $t : " ($t -match $title)
@@ -346,7 +355,6 @@ function mainJob() {
 			}
 		}
 
-		
 		
 		#if (($title -eq $titlesToCheck) -and ((get-date).date -le ($forbiddenUntilAndIncluded).date)) {
 		#if ($titleFound) {
@@ -400,11 +408,8 @@ function mainJob() {
 			$text = $text + "`n"
 			$text = $text + "`n"
 			$text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
-			
 					
 			Set-WindowStyle $Process 'MINIMIZE'
-			
-			
 			
 			#[System.Reflection.Assembly]::LoadWithPartialName(“System.Windows.Forms”)
 			#[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
@@ -458,41 +463,40 @@ $errorMsg | out-file -append -filepath $errorFile
 #write-host "the error file is " $errorFile
 #write-host $errorMsg
 
+
+# Obtain a system mutex that prevents more than one deployment taking place at the same time.
 [System.Threading.Mutex]$mutant;
 try
 {
-	# Obtain a system mutex that prevents more than one deployment taking place at the same time.
 	[bool]$wasCreated = $false;
-	$mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle3", [ref] $wasCreated);        
+	$mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle4", [ref] $wasCreated);        
 	if ($wasCreated)
 	{            
 		mainJob;
 	} else {
+	write-host "test3"
 		#just exit if there is already a script running
 		write-host "Script is already running, so I exit"
-
 		Start-Sleep -s 5
-
 		# or wait for the mutex to be released :
 		#$mutant.WaitOne();
 	}
 }
 catch {
-	$errorMsg = "$($datetime) - Error during main job ? More Info: $($_)" 
+    $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+	$errorMsg = "$($datetime) - Error during initial code. More Info: $($_)" 
 	$errorMsg | out-file -append -filepath $errorFile
 	Write-host $errorMsg
 } 
 finally
 {       
-	
 	if ($wasCreated) {
 		$mutant.ReleaseMutex(); 
 		$mutant.Dispose();
 	}
-	
-	$errorMsg = "$($datetime) - excuting the 'finally' step. More Info: $($_)" 
+
+    $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+	$errorMsg = "$($datetime) - excuting the 'finally' in initial code. More Info: $($_)" 
 	$errorMsg | out-file -append -filepath $errorFile
-	
-	
 }
 
