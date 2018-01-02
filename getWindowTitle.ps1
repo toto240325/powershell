@@ -1,6 +1,7 @@
 <#
 !!!!!!!! powershell get-content -tail 10 -wait d:\temp\error.log
 test
+test2
 #>
 
 
@@ -20,7 +21,7 @@ public static extern IntPtr GetForegroundWindow();
 
 <#
 	[void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
-	$ConnStr = “server=localhost;uid=root;password=Toto!;database=mysql;Port=3306”
+	$ConnStr = ï¿½server=localhost;uid=root;password=Toto!;database=mysql;Port=3306ï¿½
 	$ObjMysql = New-Object MySql.Data.MySqlClient.MySqlConnection($ConnStr)
 	$ObjMysql | Get-Member
 	$ObjMysql
@@ -48,15 +49,15 @@ public static extern IntPtr GetForegroundWindow();
 	
 	
 #>
-#------------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------------ï¿½
 function ConnectMySQL([string]$user,[string]$pass,[string]$MySQLHost,[string]$database) {
-	 
-	  # Load MySQL .NET Connector Objects
-	  [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
-	 
-	  # Open Connection
-	  $connStr = "server=" + $MySQLHost + ";port=3306;uid=" + $user + ";pwd=" + $pass + ";database="+$database+";Pooling=FALSE"
-	  $conn = New-Object MySql.Data.MySqlClient.MySqlConnection($connStr)
+	ï¿½
+	ï¿½ï¿½# Load MySQL .NET Connector Objects
+	ï¿½ï¿½[void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
+	ï¿½
+	ï¿½ï¿½# Open Connection
+	ï¿½ï¿½$connStr = "server=" + $MySQLHost + ";port=3306;uid=" + $user + ";pwd=" + $pass + ";database="+$database+";Pooling=FALSE"
+	ï¿½ï¿½$conn = New-Object MySql.Data.MySqlClient.MySqlConnection($connStr)
 	
     $Error.Clear()
     try
@@ -68,11 +69,11 @@ function ConnectMySQL([string]$user,[string]$pass,[string]$MySQLHost,[string]$da
         write-warning ("Could not open a connection to Database $database on Host $MySQLHost. Error: "+$Error[0].ToString())
 		Start-Sleep -s 5
 }
-	  $cmd = New-Object MySql.Data.MySqlClient.MySqlCommand("USE $database", $conn)
-	  return $conn
-	 
+	ï¿½ï¿½$cmd = New-Object MySql.Data.MySqlClient.MySqlCommand("USE $database", $conn)
+	ï¿½ï¿½return $conn
+	ï¿½
 }
-#------------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------------ï¿½
 function myQuery($conn) {
 	
     # Get an instance of what all objects need for a SELECT query : the Command object
@@ -94,34 +95,34 @@ function myQuery($conn) {
 		write-host "ID:" $oDataSet.fgw_ID "time:" $oDataSet.fgw_time "Title:" $oDataSet.fgw_title "CPU:" $oDataSet.fgw_cpu
 	}
 }
-#------------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------------ï¿½
 function WriteMySQLQuery($conn, [string]$query) {
-	 
-	  $command = $conn.CreateCommand()
-	  $command.CommandText = $query
-	  $RowsInserted = $command.ExecuteNonQuery()
-	  $command.Dispose()
-	  if ($RowsInserted) {
-		    return $RowsInserted
-		  } else {
-		    return $false
-	  }
+	ï¿½
+	ï¿½ï¿½$command = $conn.CreateCommand()
+	ï¿½ï¿½$command.CommandText = $query
+	ï¿½ï¿½$RowsInserted = $command.ExecuteNonQuery()
+	ï¿½ï¿½$command.Dispose()
+	ï¿½ï¿½if ($RowsInserted) {
+		ï¿½ï¿½ï¿½ï¿½return $RowsInserted
+		ï¿½ï¿½} else {
+		ï¿½ï¿½ï¿½ï¿½return $false
+	ï¿½ï¿½}
 }
-#------------------------------------------------------------------------------------ 
-function myInsert($conn,$dateStr,$title,$cpu,$duration) {
+#------------------------------------------------------------------------------------ï¿½
+function myInsert($conn,$dateStr,$dateStr,$title,$cpu,$duration) {
     $query = 'insert into fgw (fgw_time,fgw_title,fgw_cpu,fgw_duration) values ("'+$dateStr+'","'+$title+'",' + $cpu + ','+$duration+')'
 	
-	  $command = $conn.CreateCommand()
-	  $command.CommandText = $query
-	  $RowsInserted = $command.ExecuteNonQuery()
-	  $command.Dispose()
-	  if ($RowsInserted) {
-		    return $RowsInserted
-		  } else {
-		    return $false
-	  }
+	ï¿½ï¿½$command = $conn.CreateCommand()
+	ï¿½ï¿½$command.CommandText = $query
+	ï¿½ï¿½$RowsInserted = $command.ExecuteNonQuery()
+	ï¿½ï¿½$command.Dispose()
+	ï¿½ï¿½if ($RowsInserted) {
+		ï¿½ï¿½ï¿½ï¿½return $RowsInserted
+		ï¿½ï¿½} else {
+		ï¿½ï¿½ï¿½ï¿½return $false
+	ï¿½ï¿½}
 }
-#------------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------------ï¿½
 function myInsert2($conn,$dateStr,$title,$cpu,$duration) {
 	
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
@@ -136,7 +137,7 @@ function myInsert2($conn,$dateStr,$title,$cpu,$duration) {
     $iRowsInsert=$oMySqlCommand.ExecuteNonQuery()
     return $iRowsInsert
 }
-#------------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------------ï¿½
 function myUpdate($conn,$dateStr,$title,$cpu) {
 	
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
@@ -146,7 +147,7 @@ function myUpdate($conn,$dateStr,$title,$cpu) {
     $iRowsAffected=$oMYSQLCommand.executeNonQuery()
 	
 }
-#------------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------------ï¿½
 
 function Set-WindowStyle {
 	<#
@@ -241,10 +242,10 @@ function mainJob() {
 	# setup vars (get $user, $pass, $database, $mySqlhost)
 	#. '.\params.ps1'
 	. "$PSScriptRoot\params.ps1"
-	 
+	ï¿½
 	# Connect to MySQL Database
 	$conn = ConnectMySQL $user $pass $MySQLHost $database
-	 
+	ï¿½
 	#$query = 'insert into fgw (fgw_time,fgw_title,fgw_cpu) values ("2016-08-01 00:00:05","window title", 1000)'
 	#$Rows = WriteMySQLQuery $conn $query
 	#Write-Host $Rows " inserted into database"
@@ -379,9 +380,9 @@ function mainJob() {
 			$text = $text + "`n"
 			$text = $text + "`n"
 			$text = $text + "`n"
-			$text = $text + "            Bien essayé !`n"
+			$text = $text + "            Bien essayï¿½ !`n"
 			$text = $text + "            Je te conseille de fermer`n"
-			$text = $text + "            cet écran rapidos !! ;-)`n"
+			$text = $text + "            cet ï¿½cran rapidos !! ;-)`n"
 			$text = $text + "`n"
 			$text = $text + "`n"
 			$text = $text + "`n"
@@ -406,7 +407,7 @@ function mainJob() {
 			
 			
 			
-			#[System.Reflection.Assembly]::LoadWithPartialName(“System.Windows.Forms”)
+			#[System.Reflection.Assembly]::LoadWithPartialName(ï¿½System.Windows.Formsï¿½)
 			#[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
 			
 			$nSecs = 5
