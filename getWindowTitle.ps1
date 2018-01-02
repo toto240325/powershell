@@ -44,6 +44,7 @@ write-host "$datetime starting..."
     CREATE TABLE `fgw` (
     `fgw_id` int(11) NOT NULL AUTO_INCREMENT,
     `fgw_time` datetime DEFAULT NULL,
+    `fgw_host` varchar(20) DEFAULT NULL,
     `fgw_title` varchar(255) DEFAULT NULL,
     `fgw_cpu` float DEFAULT NULL,
     `fgw_duration` int DEFAULT NULL,
@@ -86,13 +87,13 @@ function myQuery($conn) {
     # Assign the established MySQL connection
     $oMYSQLCommand.Connection = $conn
     # Define a SELECT query
-    $oMYSQLCommand.CommandText = 'SELECT fgw_id,fgw_time,fgw_title,fgw_cpu from fgw order by fgw_id desc limit 10'
+    $oMYSQLCommand.CommandText = 'SELECT fgw_id,fgw_time,fgw_host,fgw_title,fgw_cpu from fgw order by fgw_id desc limit 10'
     $oMYSQLDataAdapter.SelectCommand = $oMYSQLCommand
     # Execute the query
     $iNumberOfDataSets = $oMYSQLDataAdapter.Fill($oMYSQLDataSet, "data")
     
     foreach ($oDataSet in $oMYSQLDataSet.tables[0]) {
-        write-host "ID:" $oDataSet.fgw_ID "time:" $oDataSet.fgw_time "Title:" $oDataSet.fgw_title "CPU:" $oDataSet.fgw_cpu
+        write-host "ID:" $oDataSet.fgw_ID "time:" $oDataSet.fgw_time "host:" $oDataSet.fgw_host "Title:" $oDataSet.fgw_title "CPU:" $oDataSet.fgw_cpu
     }
 }
 #------------------------------------------------------------------------------------
@@ -112,8 +113,8 @@ function WriteMySQLQuery($conn, [string]$query) {
     }
 }
 #------------------------------------------------------------------------------------
-function myInsert($conn, $dateStr, $title, $cpu, $duration) {
-    $query = 'insert into fgw (fgw_time,fgw_title,fgw_cpu,fgw_duration) values ("' + $dateStr + '","' + $title + '",' + $cpu + ',' + $duration + ')'
+function myInsert_obsolete($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
+    $query = 'insert into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration) values ("' + $dateStr + '","' + $hostStr + '","' + $title + '",' + $cpu + ',' + $duration + ')'
     
     $command = $conn.CreateCommand()
     $command.CommandText = $query
@@ -126,33 +127,33 @@ function myInsert($conn, $dateStr, $title, $cpu, $duration) {
         return $false
     }
 }
-#------------------------------------------------------------------------------------
-function myInsert2($conn, $dateStr, $title, $cpu, $duration) {
-    
+#------------------------------------------------------------------------------------�
+function myInsert2($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
+	
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText = '
-    INSERT into fgw (fgw_time,fgw_title,fgw_cpu,fgw_duration) values (@time,@title,@cpu,@duration)'
+    INSERT into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration) values (@time,@title,@cpu,@duration)'
     $oMYSQLCommand.Prepare()
     $oMySqlCommand.Parameters.AddWithValue("@time", $dateStr)
+    $oMySqlCommand.Parameters.AddWithValue("@host", $hostStr)
     $oMySqlCommand.Parameters.AddWithValue("@title", $title)
     $oMySqlCommand.Parameters.AddWithValue("@cpu", $cpu)
     $oMySqlCommand.Parameters.AddWithValue("@duration", $duration)
     $iRowsInsert = $oMySqlCommand.ExecuteNonQuery()
     return $iRowsInsert
 }
-#------------------------------------------------------------------------------------
-function myUpdate($conn, $dateStr, $title, $cpu) {
-    
+#------------------------------------------------------------------------------------�
+function myUpdate($conn, $dateStr, $hostStr, $title, $cpu) {
+	
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText =
     'UPDATE fgw myFgw SET fgw_cpu = 100 where myFgw.fgw_ID = 1234 and myFgw.fgw_title = "test"'
     $iRowsAffected = $oMYSQLCommand.executeNonQuery()
-    
+	
 }
-#------------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------------�
 function Set-WindowStyle {
     <#
     .LINK
@@ -239,6 +240,7 @@ function mainJob() {
     
     $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
     $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
+    $hostStr = $env:computername;
     #write-host "outfile : " $outfile
     
     $wshell = New-Object -ComObject Wscript.Shell
@@ -266,7 +268,7 @@ function mainJob() {
         try {
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
-            $Process = Get-Process | ? {$_.MainWindowHandle -eq $activeHandle}
+            $Process = Get-Process | Where-Object {$_.MainWindowHandle -eq $activeHandle}
             
             #check if this is a real process or a system (?) process
             $title = ""
@@ -339,7 +341,7 @@ function mainJob() {
                 #write-host "conn is not open"
                 $conn = ConnectMySQL $user $pass $MySQLHost $database
             }
-            $iRowsInsert = myInsert2 $conn $dateStr $title $cpu $delay
+            $iRowsInsert = myInsert2 $conn $dateStr $hostStr $title $cpu $delay
         }
         catch {
             $errorMsg = "$($datetime) - Error when storing in database. More Info: $($_)" 
@@ -388,7 +390,7 @@ function mainJob() {
             $text = $text + "`n"
             $text = $text + "`n"
             $text = $text + "`n"
-            $text = $text + "            Bien essay !`n"
+            $text = $text + "            Bien essayé !`n"
             $text = $text + "            Je te conseille de fermer`n"
             $text = $text + "            cet cran rapidos !! ;-)`n"
             $text = $text + "`n"
@@ -415,17 +417,22 @@ function mainJob() {
             #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
             #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
             
-            $nSecs = 5
+            $nSecs = 2
             $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
             
             log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
             #$errorMsg = "$($datetime) - Alerte filou !!!!" 
             #$errorMsg | out-file -append -filepath $errorFile
-            sleep -s 3
+            
+            $a = Get-Random -Minimum 2 -Maximum 6
+            For ($i = 1; $i -le $a; $i++) {
+                Set-WindowStyle $Process 'MINIMIZE'
+                Start-Sleep -s 2
+            }    
         }
         else {
             
-            sleep -s $delay
+            Start-Sleep -s $delay
         }
         $i ++
     }
@@ -442,16 +449,16 @@ $forbiddenFile = "(none)"
 if ($env:computername -eq "L02DI1453375DIT") {
     $titlesToCheck = @("Untitled - Notepad", "-------New Tab - Google Chrome")
     $outputFolder = "c:\mydata\mytemp\" 
-    $forbiddenUntilAndIncluded = "14/10/2016"
+    $forbiddenUntilAndIncluded = "10/01/2018"
     $forbiddenFile = "c:\mydata\mytemp\no_agario.txt"
     $delay = 10
 }
 elseif ($env:computername -eq "MYPC3") {
     $titlesToCheck = @("you-NO-tube", "agar", "Agar.io - Google Chrome", "slither.io - Google Chrome", "diep.io - Google Chrome", "space1.io - Google Chrome")
-    $forbiddenUntilAndIncluded = "16/10/2016"
+    $forbiddenUntilAndIncluded = "16/01/2018"
     $forbiddenFile = "d:\temp\no_agario.txt"
     $outputFolder = "d:\temp\" 
-    $delay = 3
+    $delay = 10
 }
 else {
     $outputFolder = "d:\temp\" 
