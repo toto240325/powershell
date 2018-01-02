@@ -133,7 +133,7 @@ function myInsert2($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText = '
-    INSERT into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration) values (@time,@title,@cpu,@duration)'
+    INSERT into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration) values (@time,@host,@title,@cpu,@duration)'
     $oMYSQLCommand.Prepare()
     $oMySqlCommand.Parameters.AddWithValue("@time", $dateStr)
     $oMySqlCommand.Parameters.AddWithValue("@host", $hostStr)
@@ -225,8 +225,8 @@ function mainJob() {
         #[native.win]::ShowWindow($mainWindowHandle,0)
     }
     elseif ($env:computername -eq "MYPC3") {
-        #$tmp=[native.win]::ShowWindow($mainWindowHandle,5) # 5: display window 
-        $tmp = [native.win]::ShowWindow($mainWindowHandle, 0) # 0: hide window
+        $tmp=[native.win]::ShowWindow($mainWindowHandle,5) # 5: display window 
+        #$tmp = [native.win]::ShowWindow($mainWindowHandle, 0) # 0: hide window
     }
 
     
