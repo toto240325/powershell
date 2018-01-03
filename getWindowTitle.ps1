@@ -218,6 +218,15 @@ function mainJob() {
     #write-host "mainWindowHandle : " $mainWindowHandle
     #Start-Sleep -s 3
     
+    if ($start_invisible) {
+        [native.win]::ShowWindow($mainWindowHandle, 0) # 0 : hide window 
+    }
+    else {
+        [native.win]::ShowWindow($mainWindowHandle, 5) # 5: display window        
+    }
+
+
+    <#    
     if ($env:computername -eq "L02DI1453375DIT") {
         #[native.win]::ShowWindow($mainWindowHandle,0)
     }
@@ -228,7 +237,7 @@ function mainJob() {
         $tmp=[native.win]::ShowWindow($mainWindowHandle,5) # 5: display window 
         #$tmp = [native.win]::ShowWindow($mainWindowHandle, 0) # 0: hide window
     }
-
+#>
     
     #to make the script window visible again
     #   powershell_ise
@@ -245,9 +254,6 @@ function mainJob() {
     
     $wshell = New-Object -ComObject Wscript.Shell
     
-    # setup vars (get $user, $pass, $database, $mySqlhost)
-    #. '.\params.ps1'
-    . "$PSScriptRoot\params.ps1"
     
     # Connect to MySQL Database
     $conn = ConnectMySQL $user $pass $MySQLHost $database
@@ -441,11 +447,18 @@ function mainJob() {
 #--------------------------------------------------------------------
 #------------- START ------------------------------------------------
 #--------------------------------------------------------------------
+
+#getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
+. "$PSScriptRoot\params.ps1"
+. "$PSScriptRoot\params_restricted.ps1"
+
 #checking if I am the only occurence of this script running at this time
 
 write-host "current host : " $env:computername
 $titlesToCheck = "(none)"
 $forbiddenFile = "(none)"
+
+<#
 if ($env:computername -eq "L02DI1453375DIT") {
     $titlesToCheck = @("Untitled - Notepad", "-------New Tab - Google Chrome")
     $outputFolder = "c:\users\derruer\mydata\mytemp\" 
@@ -464,9 +477,11 @@ else {
     $outputFolder = "d:\temp\" 
     $delay = 10
 }
+#>
 
 $dateTime = Get-Date
 $errorFile = $outputFolder + "error.log"
+write-host "error file : " + $errorFile
 $errorMsg = "host : $($env:computername)" 
 $errorMsg | out-file -append -filepath $errorFile
 $errorMsg = "$($datetime) - just checking that the error file is properly collecting errors..." 
