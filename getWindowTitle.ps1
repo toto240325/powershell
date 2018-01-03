@@ -234,8 +234,8 @@ function mainJob() {
         #[native.win]::ShowWindow($mainWindowHandle,0)
     }
     elseif ($env:computername -eq "MYPC3") {
-        $tmp=[native.win]::ShowWindow($mainWindowHandle,5) # 5: display window 
-        #$tmp = [native.win]::ShowWindow($mainWindowHandle, 0) # 0: hide window
+        #$tmp=[native.win]::ShowWindow($mainWindowHandle,5) # 5: display window 
+        $tmp = [native.win]::ShowWindow($mainWindowHandle, 0) # 0: hide window
     }
 #>
     
