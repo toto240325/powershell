@@ -371,12 +371,15 @@ function mainJob() {
         #write-host (get-date).Date
         #write-host $forbiddenUntilAndIncluded
         #write-host ($forbiddenUntilAndIncluded).Date
-        #write-host ((get-date).Date -le (get-date $forbiddenUntilAndIncluded).Date)
+        #write-host "cond 1 : " ((get-date).Date -le (get-date $forbiddenUntilAndIncluded).Date)
         
         $stillInForbiddenPeriod = ((get-date).Date -le (get-date $forbiddenUntilAndIncluded).Date)
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         
-        if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound)) {
+		#write-host "cond 2 : " ($stillInForbiddenPeriod -or $forbiddenFileFound)
+		#write-host "cond 3 : "($titleFound) 
+		
+		if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound)) {
                                     
             $text = ""
             $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
@@ -396,7 +399,7 @@ function mainJob() {
             $text = $text + "`n"
             $text = $text + "`n"
             $text = $text + "`n"
-            $text = $text + "            Bien essayé !`n"
+            $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
             $text = $text + "            Je te conseille de fermer`n"
             $text = $text + "            cet cran rapidos !! ;-)`n"
             $text = $text + "`n"
@@ -417,8 +420,9 @@ function mainJob() {
             $text = $text + "`n"
             $text = $text + "`n"
             $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
-                    
-            Set-WindowStyle $Process 'MINIMIZE'
+             
+
+			Set-WindowStyle $Process 'MINIMIZE'
             
             #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
             #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
@@ -448,15 +452,15 @@ function mainJob() {
 #------------- START ------------------------------------------------
 #--------------------------------------------------------------------
 
+write-host "current host : " $env:computername
+$titlesToCheck = "(none)"
+$forbiddenFile = "(none)"
 #getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
 . "$PSScriptRoot\params.ps1"
 . "$PSScriptRoot\params_restricted.ps1"
 
 #checking if I am the only occurence of this script running at this time
 
-write-host "current host : " $env:computername
-$titlesToCheck = "(none)"
-$forbiddenFile = "(none)"
 
 <#
 if ($env:computername -eq "L02DI1453375DIT") {
