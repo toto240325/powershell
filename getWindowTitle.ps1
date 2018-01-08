@@ -254,7 +254,6 @@ function mainJob() {
     
     $wshell = New-Object -ComObject Wscript.Shell
     
-    
     # Connect to MySQL Database
     $conn = ConnectMySQL $user $pass $MySQLHost $database
     
@@ -270,7 +269,19 @@ function mainJob() {
     "dateTime`tcpu`ttitle`tdelay" > $outfile
     $prevTitle = $null
     #while($i -ne 10000)
+    $iterationNb = 0;
     while ($true) {
+
+        #re-read the params file every refreshParamsRate iteration
+        $iterationNb += 1;
+        $iterationNb %= $refreshParamsRate;
+        if ($iterationNb -eq 0) {
+            . "$PSScriptRoot\params.ps1"
+            $myMsg = "$($datetime) - reading params file !!!!" 
+            #$myMsg | out-file -append -filepath $errorFile
+            write-host $myMsg
+        }
+        
         try {
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
@@ -376,10 +387,10 @@ function mainJob() {
         $stillInForbiddenPeriod = ((get-date).Date -le (get-date $forbiddenUntilAndIncluded).Date)
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         
-		#write-host "cond 2 : " ($stillInForbiddenPeriod -or $forbiddenFileFound)
-		#write-host "cond 3 : "($titleFound) 
+        #write-host "cond 2 : " ($stillInForbiddenPeriod -or $forbiddenFileFound)
+        #write-host "cond 3 : "($titleFound) 
 		
-		if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound)) {
+        if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound)) {
                                     
             $text = ""
             $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
@@ -422,7 +433,7 @@ function mainJob() {
             $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
              
 
-			Set-WindowStyle $Process 'MINIMIZE'
+            Set-WindowStyle $Process 'MINIMIZE'
             
             #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
             #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
@@ -440,8 +451,7 @@ function mainJob() {
                 Start-Sleep -s 2
             }    
         }
-        else {
-            
+        else {            
             Start-Sleep -s $delay
         }
         $i ++
@@ -460,7 +470,6 @@ $forbiddenFile = "(none)"
 . "$PSScriptRoot\params_restricted.ps1"
 
 #checking if I am the only occurence of this script running at this time
-
 
 <#
 if ($env:computername -eq "L02DI1453375DIT") {
@@ -493,12 +502,11 @@ $errorMsg | out-file -append -filepath $errorFile
 #write-host "the error file is " $errorFile
 #write-host $errorMsg
 
-
 # Obtain a system mutex that prevents more than one deployment taking place at the same time.
 [System.Threading.Mutex]$mutant;
 try {
     [bool]$wasCreated = $false;
-    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle4", [ref] $wasCreated);        
+    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle6", [ref] $wasCreated);        
     if ($wasCreated) {            
         mainJob;
     }
