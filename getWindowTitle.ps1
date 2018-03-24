@@ -367,11 +367,22 @@ function mainJob() {
         } 
                 
         $titleFound = 0
+       
         foreach ($t in $titlesToCheck) {
-            #write-host "result of test for $t : " ($t -match $title)
+            
+            $result = $false
+            try {
+             $result = ($title -match $t)
+            }
+            catch {
+                write-host "error when evaluating expression"
+            }
+
+            #write-host "result of test for $t : " $result
+            
             if ($title -match $t) { 
                 $titleFound = 1 
-                write-host "titleFound title !"
+                write-host "titleFound $title !"
             }
         }
 
@@ -521,7 +532,7 @@ try {
 }
 catch {
     $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
-    $errorMsg = "$($datetime) - Error during initial code. More Info: $($_)" 
+    $errorMsg = "$($datetime) - Error during execution. More Info: $($_)" 
     $errorMsg | out-file -append -filepath $errorFile
     Write-host $errorMsg
 } 
