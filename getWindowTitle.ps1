@@ -372,7 +372,7 @@ function mainJob() {
             
             $result = $false
             try {
-             $result = ($title -match $t)
+                $result = ($title -match $t)
             }
             catch {
                 write-host "error when evaluating expression"
@@ -397,92 +397,93 @@ function mainJob() {
         
         $stillInForbiddenPeriod = ((get-date).Date -le (get-date $forbiddenUntilAndIncluded).Date)
         $forbiddenFileFound = (Test-Path $forbiddenFile)
+        $magicFileFound = (Test-Path $magicFile)
         
         #write-host "cond 2 : " ($stillInForbiddenPeriod -or $forbiddenFileFound)
         #write-host "cond 3 : "($titleFound) 
 		
-        if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound)) {
+        if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound) -and !($magicFileFound)) {
                                     
-            $text = ""
-            $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
-            $text = $text + "            Je te conseille de fermer`n"
-            $text = $text + "            cet cran rapidos !! ;-)`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
+                $text = ""
+                $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
+                $text = $text + "            Je te conseille de fermer`n"
+                $text = $text + "            cet cran rapidos !! ;-)`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
              
 
-            Set-WindowStyle $Process 'MINIMIZE'
-            
-            #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
-            #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
-            
-            $nSecs = 2
-            $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
-            
-            log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
-            #$errorMsg = "$($datetime) - Alerte filou !!!!" 
-            #$errorMsg | out-file -append -filepath $errorFile
-            
-            $a = Get-Random -Minimum 2 -Maximum 6
-            For ($i = 1; $i -le $a; $i++) {
                 Set-WindowStyle $Process 'MINIMIZE'
-                Start-Sleep -s 2
-            }    
+            
+                #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
+                #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
+            
+                $nSecs = 2
+                $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
+            
+                log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
+                #$errorMsg = "$($datetime) - Alerte filou !!!!" 
+                #$errorMsg | out-file -append -filepath $errorFile
+            
+                $a = Get-Random -Minimum 2 -Maximum 6
+                For ($i = 1; $i -le $a; $i++) {
+                    Set-WindowStyle $Process 'MINIMIZE'
+                    Start-Sleep -s 2
+                }    
+            }
+            else {            
+                Start-Sleep -s $delay
+            }
+            $i ++
         }
-        else {            
-            Start-Sleep -s $delay
-        }
-        $i ++
     }
-}
 
-#--------------------------------------------------------------------
-#------------- START ------------------------------------------------
-#--------------------------------------------------------------------
+    #--------------------------------------------------------------------
+    #------------- START ------------------------------------------------
+    #--------------------------------------------------------------------
 
-write-host "current host : " $env:computername
-$titlesToCheck = "(none)"
-$forbiddenFile = "(none)"
-#getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
-. "$PSScriptRoot\params.ps1"
-. "$PSScriptRoot\params_restricted.ps1"
+    write-host "current host : " $env:computername
+    $titlesToCheck = "(none)"
+    $forbiddenFile = "(none)"
+    #getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
+    . "$PSScriptRoot\params.ps1"
+    . "$PSScriptRoot\params_restricted.ps1"
 
-#checking if I am the only occurence of this script running at this time
+    #checking if I am the only occurence of this script running at this time
 
-<#
+    <#
 if ($env:computername -eq "L02DI1453375DIT") {
     $titlesToCheck = @("Untitled - Notepad", "-------New Tab - Google Chrome")
     $outputFolder = "c:\users\derruer\mydata\mytemp\" 
@@ -503,47 +504,47 @@ else {
 }
 #>
 
-$dateTime = Get-Date
-$errorFile = $outputFolder + "error.log"
-write-host "error file : " + $errorFile
-$errorMsg = "host : $($env:computername)" 
-$errorMsg | out-file -append -filepath $errorFile
-$errorMsg = "$($datetime) - just checking that the error file is properly collecting errors..." 
-$errorMsg | out-file -append -filepath $errorFile
-#write-host "the error file is " $errorFile
-#write-host $errorMsg
-
-# Obtain a system mutex that prevents more than one deployment taking place at the same time.
-[System.Threading.Mutex]$mutant;
-try {
-    [bool]$wasCreated = $false;
-    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle6", [ref] $wasCreated);        
-    if ($wasCreated) {            
-        mainJob;
-    }
-    else {
-        write-host "test3"
-        #just exit if there is already a script running
-        write-host "Script is already running, so I exit"
-        Start-Sleep -s 5
-        # or wait for the mutex to be released :
-        #$mutant.WaitOne();
-    }
-}
-catch {
-    $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
-    $errorMsg = "$($datetime) - Error during execution. More Info: $($_)" 
+    $dateTime = Get-Date
+    $errorFile = $outputFolder + "error.log"
+    write-host "error file : " + $errorFile
+    $errorMsg = "host : $($env:computername)" 
     $errorMsg | out-file -append -filepath $errorFile
-    Write-host $errorMsg
-} 
-finally {       
-    if ($wasCreated) {
-        $mutant.ReleaseMutex(); 
-        $mutant.Dispose();
-    }
-
-    $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
-    $errorMsg = "$($datetime) - excuting the 'finally' in initial code. More Info: $($_)" 
+    $errorMsg = "$($datetime) - just checking that the error file is properly collecting errors..." 
     $errorMsg | out-file -append -filepath $errorFile
-}
+    #write-host "the error file is " $errorFile
+    #write-host $errorMsg
+
+    # Obtain a system mutex that prevents more than one deployment taking place at the same time.
+    [System.Threading.Mutex]$mutant;
+    try {
+        [bool]$wasCreated = $false;
+        $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle6", [ref] $wasCreated);        
+        if ($wasCreated) {            
+            mainJob;
+        }
+        else {
+            write-host "test3"
+            #just exit if there is already a script running
+            write-host "Script is already running, so I exit"
+            Start-Sleep -s 5
+            # or wait for the mutex to be released :
+            #$mutant.WaitOne();
+        }
+    }
+    catch {
+        $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+        $errorMsg = "$($datetime) - Error during execution. More Info: $($_)" 
+        $errorMsg | out-file -append -filepath $errorFile
+        Write-host $errorMsg
+    } 
+    finally {       
+        if ($wasCreated) {
+            $mutant.ReleaseMutex(); 
+            $mutant.Dispose();
+        }
+
+        $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+        $errorMsg = "$($datetime) - excuting the 'finally' in initial code. More Info: $($_)" 
+        $errorMsg | out-file -append -filepath $errorFile
+    }
 
