@@ -20,8 +20,6 @@ $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
 $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
 write-host "$datetime starting..."
 
-
-
 <#
     [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
     $ConnStr = server=localhost;uid=root;password=Toto!;database=mysql;Port=3306
@@ -39,8 +37,7 @@ write-host "$datetime starting..."
     $MySQLDataSet.Tables.user
     $ObjMysql.close()
     
-    
-    
+        
     CREATE TABLE `fgw` (
     `fgw_id` int(11) NOT NULL AUTO_INCREMENT,
     `fgw_time` datetime DEFAULT NULL,
@@ -50,8 +47,7 @@ write-host "$datetime starting..."
     `fgw_duration` int DEFAULT NULL,
     PRIMARY KEY (`fgw_id`)
     ) ENGINE=InnoDB AUTO_INCREMENT=0;
-    
-    
+        
 #>
 #------------------------------------------------------------------------------------
 function ConnectMySQL([string]$user, [string]$pass, [string]$MySQLHost, [string]$database) {
