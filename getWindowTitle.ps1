@@ -121,18 +121,19 @@ function myInsert_obsolete($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
     }
 }
 #------------------------------------------------------------------------------------�
-function myInsert2($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
+function myInsert2($conn, $dateStr, $hostStr, $title, $cpu, $duration, $isGame) {
 
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText = '
-    INSERT into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration) values (@time,@host,@title,@cpu,@duration)'
+    INSERT into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration,fgw_isgame) values (@time,@host,@title,@cpu,@duration,@isGame)'
     $oMYSQLCommand.Prepare()
     $oMySqlCommand.Parameters.AddWithValue("@time", $dateStr)
     $oMySqlCommand.Parameters.AddWithValue("@host", $hostStr)
     $oMySqlCommand.Parameters.AddWithValue("@title", $title)
     $oMySqlCommand.Parameters.AddWithValue("@cpu", $cpu)
     $oMySqlCommand.Parameters.AddWithValue("@duration", $duration)
+    $oMySqlCommand.Parameters.AddWithValue("@isGame", $isGame)
     $iRowsInsert = $oMySqlCommand.ExecuteNonQuery()
     return $iRowsInsert
 }
@@ -366,24 +367,9 @@ function mainJob() {
         } 
 
 
-        # storing window title in database
-        try {
-            $dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-            if ($conn.state -eq "Open") {
-                #write-host "conn is open"
-            }
-            else {
-                #write-host "conn is not open"
-                $conn = ConnectMySQL $user $pass $MySQLHost $database
-            }
-            $iRowsInsert = myInsert2 $conn $dateStr $hostStr $title $cpu $delay
-        }
-        catch {
-            $errorMsg = "$($datetime) - Error when storing in database. More Info: $($_)" 
-            $errorMsg | out-file -append -filepath $errorFile
-            Write-host $errorMsg
-        } 
-                
+
+        #write-host "titlesToCheck : " $titlesToCheck
+
         $titleFound = 0
        
         foreach ($t in $titlesToCheck) {
@@ -405,7 +391,26 @@ function mainJob() {
             }
         }
 
-        
+
+        # storing window title in database
+        try {
+            $dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+            if ($conn.state -eq "Open") {
+                #write-host "conn is open"
+            }
+            else {
+                #write-host "conn is not open"
+                $conn = ConnectMySQL $user $pass $MySQLHost $database
+            }
+            $iRowsInsert = myInsert2 $conn $dateStr $hostStr $title $cpu $delay $titleFound
+        }
+        catch {
+            $errorMsg = "$($datetime) - Error when storing in database. More Info: $($_)" 
+            $errorMsg | out-file -append -filepath $errorFile
+            Write-host $errorMsg
+        } 
+                
+
         #if (($title -eq $titlesToCheck) -and ((get-date).date -le ($forbiddenUntilAndIncluded).date)) {
         #if ($titleFound) {
         #$forbiddenUntilAndIncluded = "12/12/2016"
@@ -418,8 +423,8 @@ function mainJob() {
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         $magicFileFound = (Test-Path $magicFile)
         
-        <#
         write-host "titleFound : "($titleFound) 
+        <#
         write-host "magicFileFound : "($magicFileFound) 
         write-host "stillInForbiddenPeriod: "($stillInForbiddenPeriod) 
         write-host "forbiddenFileFound: "($forbiddenFileFound) 
@@ -427,11 +432,14 @@ function mainJob() {
         write-host "gameTimeExceptionallyAllowedToday: "($gameTimeExceptionallyAllowedToday) 
         write-host "gameTimeAllowedDaily: "($gameTimeAllowedDaily) 
         write-host "total allowed : " ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday) 
-        write-host "timePlayedToday -gt gameTimeExceptionallyAllowedToday: " ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday)		#>
+        write-host "timePlayedToday -gt gameTimeExceptionallyAllowedToday: " ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday)
+		#>
 
 
       
-        $myCondition = ($titleFound -and !($magicFileFound) -and ($timePlayedToday -gt ($gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily + 1)) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )        #write-host "myCondition : $myCondition"        
+        $myCondition = ($titleFound -and !($magicFileFound) -and ($timePlayedToday -gt ($gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily + 1)) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        #write-host "myCondition : $myCondition"
+        
         if ($myCondition) {
                
                 write-host "test after cond4"                     
