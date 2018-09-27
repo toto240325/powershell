@@ -20,45 +20,45 @@ $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
 $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
 write-host "$datetime starting..."
 
+
+
 <#
-    [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
-    $ConnStr = server=localhost;uid=root;password=Toto!;database=mysql;Port=3306
-    $ObjMysql = New-Object MySql.Data.MySqlClient.MySqlConnection($ConnStr)
-    $ObjMysql | Get-Member
-    $ObjMysql
-    $ObjMysql.Open()
-    $req = "SELECT * FROM user"
-    $SQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand($req,$ObjMysql)
-    $MySQLDataAdaptater = New-Object MySql.Data.MySqlClient.MySqlDataAdapter($SQLCommand)
-    $MySQLDataSet = New-Object System.Data.DataSet 
-    $RecordCount = $MySQLDataAdaptater.Fill($MySQLDataSet)
-    $RecordCount
-    $MySQLDataSet.Tables
+[void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
+$ConnStr = server=localhost;uid=root;password=Toto!;database=mysql;Port=3306
+$ObjMysql = New-Object MySql.Data.MySqlClient.MySqlConnection($ConnStr)
+$ObjMysql | Get-Member
+$ObjMysql
+$ObjMysql.Open()
+$req = "SELECT * FROM user"
+$SQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand($req,$ObjMysql)
+$MySQLDataAdaptater = New-Object MySql.Data.MySqlClient.MySqlDataAdapter($SQLCommand)
+$MySQLDataSet = New-Object System.Data.DataSet
+$RecordCount = $MySQLDataAdaptater.Fill($MySQLDataSet)
+$RecordCount
+$MySQLDataSet.Tables
     $MySQLDataSet.Tables.user
-    $ObjMysql.close()
-    
-        
-    CREATE TABLE `fgw` (
-    `fgw_id` int(11) NOT NULL AUTO_INCREMENT,
-    `fgw_time` datetime DEFAULT NULL,
-    `fgw_host` varchar(20) DEFAULT NULL,
-    `fgw_title` varchar(255) DEFAULT NULL,
-    `fgw_cpu` float DEFAULT NULL,
-    `fgw_duration` int DEFAULT NULL,
-    PRIMARY KEY (`fgw_id`)
-    ) ENGINE=InnoDB AUTO_INCREMENT=0;
-        
+$ObjMysql.close()
+
+CREATE TABLE `fgw` (
+`fgw_id` int(11) NOT NULL AUTO_INCREMENT,
+`fgw_time` datetime DEFAULT NULL,
+`fgw_host` varchar(20) DEFAULT NULL,
+`fgw_title` varchar(255) DEFAULT NULL,
+`fgw_cpu` float DEFAULT NULL,
+`fgw_duration` int DEFAULT NULL,
+PRIMARY KEY (`fgw_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0;
+
 #>
 #------------------------------------------------------------------------------------
 function ConnectMySQL([string]$user, [string]$pass, [string]$MySQLHost, [string]$database) {
-    
     # Load MySQL .NET Connector Objects
     [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
-    
-    # Open Connection
+
+# Open Connection
     $connStr = "server=" + $MySQLHost + ";port=3306;uid=" + $user + ";pwd=" + $pass + ";database=" + $database + ";Pooling=FALSE"
     $conn = New-Object MySql.Data.MySqlClient.MySqlConnection($connStr)
-    
+
     $Error.Clear()
     try {
         $conn.Open()
@@ -69,17 +69,16 @@ function ConnectMySQL([string]$user, [string]$pass, [string]$MySQLHost, [string]
     }
     $cmd = New-Object MySql.Data.MySqlClient.MySqlCommand("USE $database", $conn)
     return $conn
-    
 }
 #------------------------------------------------------------------------------------
 function myQuery($conn) {
-    
+
     # Get an instance of what all objects need for a SELECT query : the Command object
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     # DataAdapter Object
     $oMYSQLDataAdapter = New-Object MySql.Data.MySqlClient.MySqlDataAdapter
-    # And the DataSet Object 
-    $oMYSQLDataSet = New-Object System.Data.DataSet	
+    # And the DataSet Object
+    $oMYSQLDataSet = New-Object System.Data.DataSet
     # Assign the established MySQL connection
     $oMYSQLCommand.Connection = $conn
     # Define a SELECT query
@@ -87,16 +86,14 @@ function myQuery($conn) {
     $oMYSQLDataAdapter.SelectCommand = $oMYSQLCommand
     # Execute the query
     $iNumberOfDataSets = $oMYSQLDataAdapter.Fill($oMYSQLDataSet, "data")
-    
+
     foreach ($oDataSet in $oMYSQLDataSet.tables[0]) {
         write-host "ID:" $oDataSet.fgw_ID "time:" $oDataSet.fgw_time "host:" $oDataSet.fgw_host "Title:" $oDataSet.fgw_title "CPU:" $oDataSet.fgw_cpu
     }
 }
 #------------------------------------------------------------------------------------
 function WriteMySQLQuery($conn, [string]$query) {
-    
-    
-    
+
     $command = $conn.CreateCommand()
     $command.CommandText = $query
     $RowsInserted = $command.ExecuteNonQuery()
@@ -111,7 +108,7 @@ function WriteMySQLQuery($conn, [string]$query) {
 #------------------------------------------------------------------------------------
 function myInsert_obsolete($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
     $query = 'insert into fgw (fgw_time,fgw_host,fgw_title,fgw_cpu,fgw_duration) values ("' + $dateStr + '","' + $hostStr + '","' + $title + '",' + $cpu + ',' + $duration + ')'
-    
+
     $command = $conn.CreateCommand()
     $command.CommandText = $query
     $RowsInserted = $command.ExecuteNonQuery()
@@ -125,7 +122,7 @@ function myInsert_obsolete($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
 }
 #------------------------------------------------------------------------------------�
 function myInsert2($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
-	
+
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText = '
@@ -141,13 +138,13 @@ function myInsert2($conn, $dateStr, $hostStr, $title, $cpu, $duration) {
 }
 #------------------------------------------------------------------------------------�
 function myUpdate($conn, $dateStr, $hostStr, $title, $cpu) {
-	
+
     $oMYSQLCommand = New-Object MySql.Data.MySqlClient.MySqlCommand
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText =
     'UPDATE fgw myFgw SET fgw_cpu = 100 where myFgw.fgw_ID = 1234 and myFgw.fgw_title = "test"'
     $iRowsAffected = $oMYSQLCommand.executeNonQuery()
-	
+
 }
 #------------------------------------------------------------------------------------�
 function Set-WindowStyle {
@@ -183,10 +180,10 @@ function Set-WindowStyle {
         }
 
         $Win32ShowWindowAsync = Add-Type -MemberDefinition @'
-[DllImport("user32.dll")] 
-public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow); 
+[DllImport("user32.dll")]
+public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 '@ -Name "Win32ShowWindowAsync" -Namespace Win32Functions -PassThru
-    
+
     }
 
     PROCESS {
@@ -205,24 +202,23 @@ function log_error($errorMsg) {
 
 
 function mainJob() {
-    
-    
+
     #making the script window invisible
     Add-Type -Name win -MemberDefinition '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle, int state);' -Namespace native
     $p = [System.Diagnostics.Process]::GetCurrentProcess() | Get-Process
     $mainWindowHandle = $p.MainWindowHandle
     #write-host "mainWindowHandle : " $mainWindowHandle
     #Start-Sleep -s 3
-    
+
     if ($start_invisible) {
-        [native.win]::ShowWindow($mainWindowHandle, 0) # 0 : hide window 
+        [native.win]::ShowWindow($mainWindowHandle, 0) # 0 : hide window
     }
     else {
-        [native.win]::ShowWindow($mainWindowHandle, 5) # 5: display window        
+        [native.win]::ShowWindow($mainWindowHandle, 5) # 5: display window
     }
 
 
-    <#    
+    <#
     if ($env:computername -eq "L02DI1453375DIT") {
         #[native.win]::ShowWindow($mainWindowHandle,0)
     }
@@ -240,9 +236,7 @@ function mainJob() {
     #   Add-Type -Name win -MemberDefinition '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle, int state);' -Namespace native
     #   #get the mainWindowHandle in the Excel filename !
     #   [native.win]::ShowWindow(464782,5)
-    
-    
-    
+
     $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
     $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
     $hostStr = $env:computername;
@@ -267,6 +261,7 @@ function mainJob() {
     #while($i -ne 10000)
     $iterationNb = 0;
     while ($true) {
+        write-host "start iteration"
 
         #re-read the params file every refreshParamsRate iteration
         $iterationNb += 1;
@@ -279,6 +274,33 @@ function mainJob() {
         }
         
         try {
+            # checking homw much time has already been played today
+            if ($iterationNb -eq 0) {
+                $duration = 0
+                $url = "http://192.168.0.147/monitor/getGamesTodayData.php"
+                $res = Invoke-RestMethod -Uri $url
+                $timePlayedToday = [int]$res.records.duration
+                $myMsg = "$($datetime) - time already played today : $timePlayedToday" 
+                #$myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
+             }
+
+
+            # checking how much time could exceptionally be played today
+            if ($iterationNb -eq 0) {
+                $duration = 0
+                $url = "http://192.168.0.147/monitor/getGameTimeExceptionallyAllowedToday.php"
+                $res = Invoke-RestMethod -Uri $url
+                $gameTimeExceptionallyAllowedToday = [int]$res.gameTimeExceptionallyAllowedToday
+                $gameTimeAllowedDaily = [int]$res.gameTimeAllowedDaily
+                $myMsg = "$($datetime) - time exceptionally allowed today : $gameTimeExceptionallyAllowedToday   gameTimeAllowedDaily : $gameTimeAllowedDaily" 
+                #$myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
+            }
+
+			
+            write-host "get info process"
+
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
             $Process = Get-Process | Where-Object {$_.MainWindowHandle -eq $activeHandle}
@@ -378,6 +400,7 @@ function mainJob() {
             
             if ($title -match $t) { 
                 $titleFound = 1 
+				$titleTxt = $title
                 write-host "titleFound $title !"
             }
         }
@@ -395,11 +418,23 @@ function mainJob() {
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         $magicFileFound = (Test-Path $magicFile)
         
-        #write-host "cond 2 : " ($stillInForbiddenPeriod -or $forbiddenFileFound)
-        #write-host "cond 3 : "($titleFound) 
-		
-        if ($titleFound -and ($stillInForbiddenPeriod -or $forbiddenFileFound) -and !($magicFileFound)) {
-                                    
+        <#
+        write-host "titleFound : "($titleFound) 
+        write-host "magicFileFound : "($magicFileFound) 
+        write-host "stillInForbiddenPeriod: "($stillInForbiddenPeriod) 
+        write-host "forbiddenFileFound: "($forbiddenFileFound) 
+        write-host "timePlayedToday : "($timePlayedToday) 
+        write-host "gameTimeExceptionallyAllowedToday: "($gameTimeExceptionallyAllowedToday) 
+        write-host "gameTimeAllowedDaily: "($gameTimeAllowedDaily) 
+        write-host "total allowed : " ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday) 
+        write-host "timePlayedToday -gt gameTimeExceptionallyAllowedToday: " ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday)		#>
+
+
+      
+        $myCondition = ($titleFound -and !($magicFileFound) -and ($timePlayedToday -gt ($gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily + 1)) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )        #write-host "myCondition : $myCondition"        
+        if ($myCondition) {
+               
+                write-host "test after cond4"                     
                 $text = ""
                 $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
                 $text = $text + "`n"
@@ -437,7 +472,9 @@ function mainJob() {
                 $text = $text + "`n"
                 $text = $text + "`n"
                 $text = $text + "`n"
-                $text = $text + "`n"
+                $text = $text + "played : $timePlayedToday`n"
+                $text = $text + "exceptionally allowed today : $timeAllowedToday`n"
+                $text = $text + $titleTxt + "`n"
                 $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
              
 
@@ -447,19 +484,21 @@ function mainJob() {
                 #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
             
                 $nSecs = 2
-                $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
-            
+                #write-host "before popup"
+                $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
+                #write-host "after popup"
+
                 log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
                 #$errorMsg = "$($datetime) - Alerte filou !!!!" 
                 #$errorMsg | out-file -append -filepath $errorFile
-            
+
                 $a = Get-Random -Minimum 2 -Maximum 6
                 For ($i = 1; $i -le $a; $i++) {
                     Set-WindowStyle $Process 'MINIMIZE'
                     Start-Sleep -s 2
-                }    
+                }
             }
-            else {            
+            else {
                 Start-Sleep -s $delay
             }
             $i ++
@@ -514,7 +553,7 @@ else {
     [System.Threading.Mutex]$mutant;
     try {
         [bool]$wasCreated = $false;
-        $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle6", [ref] $wasCreated);        
+        $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $wasCreated);        
         if ($wasCreated) {            
             mainJob;
         }
@@ -528,12 +567,14 @@ else {
         }
     }
     catch {
+        write-host "!!!! catch"
         $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
         $errorMsg = "$($datetime) - Error during execution. More Info: $($_)" 
         $errorMsg | out-file -append -filepath $errorFile
         Write-host $errorMsg
     } 
     finally {       
+        write-host "!!!! Finally"
         if ($wasCreated) {
             $mutant.ReleaseMutex(); 
             $mutant.Dispose();
