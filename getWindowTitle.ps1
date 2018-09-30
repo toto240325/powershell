@@ -55,7 +55,7 @@ function ConnectMySQL([string]$user, [string]$pass, [string]$MySQLHost, [string]
     # Load MySQL .NET Connector Objects
     [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
 
-# Open Connection
+    # Open Connection
     $connStr = "server=" + $MySQLHost + ";port=3306;uid=" + $user + ";pwd=" + $pass + ";database=" + $database + ";Pooling=FALSE"
     $conn = New-Object MySql.Data.MySqlClient.MySqlConnection($connStr)
 
@@ -262,35 +262,42 @@ function mainJob() {
     #while($i -ne 10000)
     $iterationNb = 0;
     while ($true) {
+        write-host "-----------------------------------------"
         write-host "start iteration"
 
         #re-read the params file every refreshParamsRate iteration
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
         if ($iterationNb -eq 0) {
-            . "$PSScriptRoot\params.ps1"
             $myMsg = "$($datetime) - reading params file !!!!" 
             #$myMsg | out-file -append -filepath $errorFile
             write-host $myMsg
+            . "$PSScriptRoot\params.ps1"
         }
         
         try {
             # checking homw much time has already been played today
             if ($iterationNb -eq 0) {
                 $duration = 0
-                $url = "http://192.168.0.147/monitor/getGamesTodayData.php"
+                $url = "http://" + $webserver + "/monitor/getTimePlayedToday.php"
+                $myMsg = "$($datetime) - calling $url" 
+                #$myMsg | out-file -append -filepath $errorFile
+                write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $timePlayedToday = [int]$res.records.duration
                 $myMsg = "$($datetime) - time already played today : $timePlayedToday" 
                 #$myMsg | out-file -append -filepath $errorFile
                 #write-host $myMsg
-             }
+            }
 
 
             # checking how much time could exceptionally be played today
             if ($iterationNb -eq 0) {
                 $duration = 0
-                $url = "http://192.168.0.147/monitor/getGameTimeExceptionallyAllowedToday.php"
+                $url = "http://" + $webserver + "/monitor/getGameTimeExceptionallyAllowedToday.php"
+                $myMsg = "$($datetime) - calling $url" 
+                #$myMsg | out-file -append -filepath $errorFile
+                write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $gameTimeExceptionallyAllowedToday = [int]$res.gameTimeExceptionallyAllowedToday
                 $gameTimeAllowedDaily = [int]$res.gameTimeAllowedDaily
@@ -299,7 +306,6 @@ function mainJob() {
                 #write-host $myMsg
             }
 
-			
             write-host "get info process"
 
             # get info on process currently executing the foreground window
@@ -386,7 +392,7 @@ function mainJob() {
             
             if ($title -match $t) { 
                 $titleFound = 1 
-				$titleTxt = $title
+                $titleTxt = $title
                 write-host "titleFound $title !"
             }
         }
@@ -442,91 +448,91 @@ function mainJob() {
         
         if ($myCondition) {
                
-                write-host "test after cond4"                     
-                $text = ""
-                $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
-                $text = $text + "            Je te conseille de fermer`n"
-                $text = $text + "            cet cran rapidos !! ;-)`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "`n"
-                $text = $text + "played : $timePlayedToday`n"
-                $text = $text + "exceptionally allowed today : $timeAllowedToday`n"
-                $text = $text + $titleTxt + "`n"
-                $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
+            write-host "test after cond4"                     
+            $text = ""
+            $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
+            $text = $text + "            Je te conseille de fermer`n"
+            $text = $text + "            cet cran rapidos !! ;-)`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "`n"
+            $text = $text + "played : $timePlayedToday`n"
+            $text = $text + "exceptionally allowed today : $timeAllowedToday`n"
+            $text = $text + $titleTxt + "`n"
+            $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
              
 
+            Set-WindowStyle $Process 'MINIMIZE'
+            
+            #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
+            #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
+            
+            $nSecs = 2
+            #write-host "before popup"
+            $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
+            #write-host "after popup"
+
+            log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
+            #$errorMsg = "$($datetime) - Alerte filou !!!!" 
+            #$errorMsg | out-file -append -filepath $errorFile
+
+            $a = Get-Random -Minimum 2 -Maximum 6
+            For ($i = 1; $i -le $a; $i++) {
                 Set-WindowStyle $Process 'MINIMIZE'
-            
-                #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
-                #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
-            
-                $nSecs = 2
-                #write-host "before popup"
-                $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
-                #write-host "after popup"
-
-                log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
-                #$errorMsg = "$($datetime) - Alerte filou !!!!" 
-                #$errorMsg | out-file -append -filepath $errorFile
-
-                $a = Get-Random -Minimum 2 -Maximum 6
-                For ($i = 1; $i -le $a; $i++) {
-                    Set-WindowStyle $Process 'MINIMIZE'
-                    Start-Sleep -s 2
-                }
+                Start-Sleep -s 2
             }
-            else {
-                Start-Sleep -s $delay
-            }
-            $i ++
         }
+        else {
+            Start-Sleep -s $delay
+        }
+        $i ++
     }
+}
 
-    #--------------------------------------------------------------------
-    #------------- START ------------------------------------------------
-    #--------------------------------------------------------------------
+#--------------------------------------------------------------------
+#------------- START ------------------------------------------------
+#--------------------------------------------------------------------
 
-    write-host "current host : " $env:computername
-    $titlesToCheck = "(none)"
-    $forbiddenFile = "(none)"
-    #getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
-    . "$PSScriptRoot\params.ps1"
-    . "$PSScriptRoot\params_restricted.ps1"
+write-host "current host : " $env:computername
+$titlesToCheck = "(none)"
+$forbiddenFile = "(none)"
+#getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
+. "$PSScriptRoot\params.ps1"
+. "$PSScriptRoot\params_restricted.ps1"
 
-    #checking if I am the only occurence of this script running at this time
+#checking if I am the only occurence of this script running at this time
 
-    <#
+<#
 if ($env:computername -eq "L02DI1453375DIT") {
     $titlesToCheck = @("Untitled - Notepad", "-------New Tab - Google Chrome")
     $outputFolder = "c:\users\derruer\mydata\mytemp\" 
@@ -547,49 +553,49 @@ else {
 }
 #>
 
-    $dateTime = Get-Date
-    $errorFile = $outputFolder + "error.log"
-    write-host "error file : " + $errorFile
-    $errorMsg = "host : $($env:computername)" 
-    $errorMsg | out-file -append -filepath $errorFile
-    $errorMsg = "$($datetime) - just checking that the error file is properly collecting errors..." 
-    $errorMsg | out-file -append -filepath $errorFile
-    #write-host "the error file is " $errorFile
-    #write-host $errorMsg
+$dateTime = Get-Date
+$errorFile = $outputFolder + "error.log"
+write-host "error file : " + $errorFile
+$errorMsg = "host : $($env:computername)" 
+$errorMsg | out-file -append -filepath $errorFile
+$errorMsg = "$($datetime) - just checking that the error file is properly collecting errors..." 
+$errorMsg | out-file -append -filepath $errorFile
+#write-host "the error file is " $errorFile
+#write-host $errorMsg
 
-    # Obtain a system mutex that prevents more than one deployment taking place at the same time.
-    [System.Threading.Mutex]$mutant;
-    try {
-        [bool]$wasCreated = $false;
-        $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $wasCreated);        
-        if ($wasCreated) {            
-            mainJob;
-        }
-        else {
-            write-host "test3"
-            #just exit if there is already a script running
-            write-host "Script is already running, so I exit"
-            Start-Sleep -s 5
-            # or wait for the mutex to be released :
-            #$mutant.WaitOne();
-        }
+# Obtain a system mutex that prevents more than one deployment taking place at the same time.
+[System.Threading.Mutex]$mutant;
+try {
+    [bool]$wasCreated = $false;
+    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $wasCreated);        
+    if ($wasCreated) {            
+        mainJob;
     }
-    catch {
-        write-host "!!!! catch"
-        $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
-        $errorMsg = "$($datetime) - Error during execution. More Info: $($_)" 
-        $errorMsg | out-file -append -filepath $errorFile
-        Write-host $errorMsg
-    } 
-    finally {       
-        write-host "!!!! Finally"
-        if ($wasCreated) {
-            $mutant.ReleaseMutex(); 
-            $mutant.Dispose();
-        }
+    else {
+        write-host "test3"
+        #just exit if there is already a script running
+        write-host "Script is already running, so I exit"
+        Start-Sleep -s 5
+        # or wait for the mutex to be released :
+        #$mutant.WaitOne();
+    }
+}
+catch {
+    write-host "!!!! catch"
+    $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+    $errorMsg = "$($datetime) - Error during execution. More Info: $($_)" 
+    $errorMsg | out-file -append -filepath $errorFile
+    Write-host $errorMsg
+} 
+finally {       
+    write-host "!!!! Finally"
+    if ($wasCreated) {
+        $mutant.ReleaseMutex(); 
+        $mutant.Dispose();
+    }
 
-        $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
-        $errorMsg = "$($datetime) - excuting the 'finally' in initial code. More Info: $($_)" 
-        $errorMsg | out-file -append -filepath $errorFile
-    }
+    $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
+    $errorMsg = "$($datetime) - excuting the 'finally' in initial code. More Info: $($_)" 
+    $errorMsg | out-file -append -filepath $errorFile
+}
 
