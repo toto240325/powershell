@@ -260,7 +260,7 @@ function mainJob() {
     "dateTime`tcpu`ttitle`tdelay" > $outfile
     $prevTitle = $null
     #while($i -ne 10000)
-    $iterationNb = 0;
+    $iterationNb = -1;
     while ($true) {
         write-host "-----------------------------------------"
         write-host "start iteration"
@@ -276,6 +276,24 @@ function mainJob() {
         }
         
         try {
+
+            # getting the keywords to check in the titles 
+            if ($iterationNb -eq 0) {
+                $keywords = "";
+                $url = "http://" + $webserver + "/monitor/getKeywords.php"
+                $myMsg = "$($datetime) - calling $url" 
+                #$myMsg | out-file -append -filepath $errorFile
+                write-host $myMsg
+                $res = Invoke-RestMethod -Uri $url
+                write-host "res :"
+                $res
+                $keywords = $res.keywords
+                $errMsg = $res.errMsg
+                $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
+                #$myMsg | out-file -append -filepath $errorFile
+                write-host $myMsg
+            }
+
             # checking homw much time has already been played today
             if ($iterationNb -eq 0) {
                 $duration = 0
@@ -284,6 +302,8 @@ function mainJob() {
                 #$myMsg | out-file -append -filepath $errorFile
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
+                #write-host "time played today "
+                #$res
                 $timePlayedToday = [int]$res.records.duration
                 $myMsg = "$($datetime) - time already played today : $timePlayedToday" 
                 #$myMsg | out-file -append -filepath $errorFile
