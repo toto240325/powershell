@@ -273,20 +273,19 @@ function mainJob() {
             #$myMsg | out-file -append -filepath $errorFile
             write-host $myMsg
             . "$PSScriptRoot\params.ps1"
+            write-host "titlesToCheck from params : " $titlesToCheck
+            $titlesToCheck
         }
         
         try {
 
             # getting the keywords to check in the titles 
             if ($iterationNb -eq 0) {
-                $keywords = "";
                 $url = "http://" + $webserver + "/monitor/getKeywords.php"
                 $myMsg = "$($datetime) - calling $url" 
                 #$myMsg | out-file -append -filepath $errorFile
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
-                write-host "res :"
-                $res
                 $keywords = $res.keywords
                 $errMsg = $res.errMsg
                 $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
@@ -398,7 +397,8 @@ function mainJob() {
 
         $titleFound = 0
        
-        foreach ($t in $titlesToCheck) {
+#       foreach ($t in $titlesToCheck) {
+        foreach ($t in $keywords) {
             
             $result = $false
             try {
