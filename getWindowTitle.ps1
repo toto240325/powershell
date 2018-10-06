@@ -197,6 +197,10 @@ public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 }
 
 
+function debug($msg) {
+    if ($debug) { write-host $msg }
+}
+
 function log_error($errorMsg) {
     $errorMsg | out-file -append -filepath $errorFile
 }
@@ -263,11 +267,12 @@ function mainJob() {
     $iterationNb = -1;
     while ($true) {
         write-host "-----------------------------------------"
-        write-host "start iteration"
-
-        #re-read the params file every refreshParamsRate iteration
+        write-host "$($datetime) - start iteration"
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
+
+        <# obsolete - replaced by keywords in DB
+        #re-read the params file every refreshParamsRate iteration
         if ($iterationNb -eq 0) {
             $myMsg = "$($datetime) - reading params file !!!!" 
             #$myMsg | out-file -append -filepath $errorFile
@@ -276,6 +281,7 @@ function mainJob() {
             write-host "titlesToCheck from params : " $titlesToCheck
             $titlesToCheck
         }
+        #>
         
         try {
 
@@ -290,7 +296,7 @@ function mainJob() {
                 $errMsg = $res.errMsg
                 $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
                 #$myMsg | out-file -append -filepath $errorFile
-                write-host $myMsg
+                debug $myMsg
             }
 
             # checking homw much time has already been played today
@@ -302,11 +308,12 @@ function mainJob() {
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 #write-host "time played today "
-                #$res
-                $timePlayedToday = [int]$res.records.duration
+                debug "res : $res"
+                #write-host "time played today " $res.timePlayedToday
+                $timePlayedToday = $res.timePlayedToday
                 $myMsg = "$($datetime) - time already played today : $timePlayedToday" 
                 #$myMsg | out-file -append -filepath $errorFile
-                #write-host $myMsg
+                debug $myMsg
             }
 
 
@@ -314,7 +321,7 @@ function mainJob() {
             if ($iterationNb -eq 0) {
                 $duration = 0
                 $url = "http://" + $webserver + "/monitor/getGameTimeExceptionallyAllowedToday.php"
-                $myMsg = "$($datetime) - calling $url" 
+                if ($debug) { $myMsg = "$($datetime) - calling $url" }
                 #$myMsg | out-file -append -filepath $errorFile
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
@@ -325,7 +332,7 @@ function mainJob() {
                 #write-host $myMsg
             }
 
-            write-host "get info process"
+            debug "get info process"
 
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
@@ -413,7 +420,7 @@ function mainJob() {
             if ($title -match $t) { 
                 $titleFound = 1 
                 $titleTxt = $title
-                write-host "titleFound $title !"
+                debug "titleFound $title !"
             }
         }
 
@@ -448,9 +455,10 @@ function mainJob() {
         $stillInForbiddenPeriod = ((get-date).Date -le (get-date $forbiddenUntilAndIncluded).Date)
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         $magicFileFound = (Test-Path $magicFile)
+        $remainingTimeToPlay = $gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily - $timePlayedToday + 1
         
-        write-host "titleFound : "($titleFound) 
         <#
+        write-host "titleFound : "($titleFound) 
         write-host "magicFileFound : "($magicFileFound) 
         write-host "stillInForbiddenPeriod: "($stillInForbiddenPeriod) 
         write-host "forbiddenFileFound: "($forbiddenFileFound) 
@@ -458,12 +466,13 @@ function mainJob() {
         write-host "gameTimeExceptionallyAllowedToday: "($gameTimeExceptionallyAllowedToday) 
         write-host "gameTimeAllowedDaily: "($gameTimeAllowedDaily) 
         write-host "total allowed : " ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday) 
+        write-host "remaining to play : $remainingTimeToPlay"
         write-host "timePlayedToday -gt gameTimeExceptionallyAllowedToday: " ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday)
-		#>
-
-
+        write-host "remainingTimeToPlay -le 0 : " ($remainingTimeToPlay -le 0)
+    	#>
+	
       
-        $myCondition = ($titleFound -and !($magicFileFound) -and ($timePlayedToday -gt ($gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily + 1)) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        $myCondition = ($titleFound -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         #write-host "myCondition : $myCondition"
         
         if ($myCondition) {
