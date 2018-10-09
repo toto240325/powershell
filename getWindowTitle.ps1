@@ -397,7 +397,7 @@ function mainJob() {
 
         $titleFound = 0
        
-#       foreach ($t in $titlesToCheck) {
+        #       foreach ($t in $titlesToCheck) {
         foreach ($t in $keywords) {
             
             $result = $false
