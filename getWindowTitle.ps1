@@ -312,7 +312,7 @@ function mainJob() {
                 debug "res : $res"
                 #write-host "time played today " $res.timePlayedToday
                 $timePlayedToday = $res.timePlayedToday
-                $myMsg = "$($datetime) - time already played today : $timePlayedToday" 
+                #$myMsg = "$($datetime) - time already played today : $timePlayedToday" 
                 #$myMsg | out-file -append -filepath $errorFile
                 debug $myMsg
             }
@@ -456,13 +456,13 @@ function mainJob() {
         $magicFileFound = (Test-Path $magicFile)
         $remainingTimeToPlay = $gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily - $timePlayedToday + 1
         
+        <#
         write-host "remaining to play : $remainingTimeToPlay"
         write-host "titleFound : "($titleFound) 
         write-host "magicFileFound : "($magicFileFound) 
         write-host "remainingTimeToPlay -le 0 : " ($remainingTimeToPlay -le 0)
         write-host "stillInForbiddenPeriod: "($stillInForbiddenPeriod) 
         write-host "forbiddenFileFound: "($forbiddenFileFound) 
-        <#
         write-host "timePlayedToday : "($timePlayedToday) 
         write-host "gameTimeExceptionallyAllowedToday: "($gameTimeExceptionallyAllowedToday) 
         write-host "gameTimeAllowedDaily: "($gameTimeAllowedDaily) 
