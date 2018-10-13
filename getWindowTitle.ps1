@@ -1,7 +1,6 @@
 <#
 !!!!!!!! powershell get-content -tail 10 -wait d:\temp\error.log
-test
-.
+test   
 #>
 
 
@@ -268,7 +267,7 @@ function mainJob() {
     $iterationNb = -1;
     while ($true) {
         write-host "-----------------------------------------"
-        write-host "$($datetime) - start iteration"
+        #write-host "$($datetime) - start iteration"
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
 
@@ -289,13 +288,13 @@ function mainJob() {
             # getting the keywords to check in the titles 
             if ($iterationNb -eq 0) {
                 $url = "http://" + $webserver + "/monitor/getKeywords.php"
-                $myMsg = "$($datetime) - calling $url" 
+                #$myMsg = "$($datetime) - calling $url" 
                 #$myMsg | out-file -append -filepath $errorFile
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $keywords = $res.keywords
                 $errMsg = $res.errMsg
-                $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
+                #$myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
                 #$myMsg | out-file -append -filepath $errorFile
                 debug $myMsg
             }
@@ -304,7 +303,7 @@ function mainJob() {
             if ($iterationNb -eq 0) {
                 $duration = 0
                 $url = "http://" + $webserver + "/monitor/getTimePlayedToday.php"
-                $myMsg = "$($datetime) - calling $url" 
+                #$myMsg = "$($datetime) - calling $url" 
                 #$myMsg | out-file -append -filepath $errorFile
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
@@ -328,7 +327,7 @@ function mainJob() {
                 $res = Invoke-RestMethod -Uri $url
                 $gameTimeExceptionallyAllowedToday = [int]$res.gameTimeExceptionallyAllowedToday
                 $gameTimeAllowedDaily = [int]$res.gameTimeAllowedDaily
-                $myMsg = "$($datetime) - time exceptionally allowed today : $gameTimeExceptionallyAllowedToday   gameTimeAllowedDaily : $gameTimeAllowedDaily" 
+                #$myMsg = "$($datetime) - time exceptionally allowed today : $gameTimeExceptionallyAllowedToday   gameTimeAllowedDaily : $gameTimeAllowedDaily" 
                 #$myMsg | out-file -append -filepath $errorFile
                 #write-host $myMsg
             }
@@ -472,23 +471,24 @@ function mainJob() {
         $magicFileFound = (Test-Path $magicFile)
         $remainingTimeToPlay = $gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily - $timePlayedToday + 1
         
-        <#
+        write-host "remaining to play : $remainingTimeToPlay"
         write-host "titleFound : "($titleFound) 
         write-host "magicFileFound : "($magicFileFound) 
+        write-host "remainingTimeToPlay -le 0 : " ($remainingTimeToPlay -le 0)
         write-host "stillInForbiddenPeriod: "($stillInForbiddenPeriod) 
         write-host "forbiddenFileFound: "($forbiddenFileFound) 
+        <#
         write-host "timePlayedToday : "($timePlayedToday) 
         write-host "gameTimeExceptionallyAllowedToday: "($gameTimeExceptionallyAllowedToday) 
         write-host "gameTimeAllowedDaily: "($gameTimeAllowedDaily) 
         write-host "total allowed : " ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday) 
         write-host "remaining to play : $remainingTimeToPlay"
         write-host "timePlayedToday -gt gameTimeExceptionallyAllowedToday: " ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday)
-        write-host "remainingTimeToPlay -le 0 : " ($remainingTimeToPlay -le 0)
     	#>
 	
       
         $myCondition = ($titleFound -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
-        #write-host "myCondition : $myCondition"
+        write-host "myCondition : $myCondition"
         
         if ($myCondition) {
                
