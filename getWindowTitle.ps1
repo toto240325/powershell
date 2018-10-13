@@ -1,7 +1,6 @@
 <#
 !!!!!!!! powershell get-content -tail 10 -wait d:\temp\error.log
 test
-.
 #>
 
 
