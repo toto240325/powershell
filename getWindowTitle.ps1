@@ -374,19 +374,6 @@ function mainJob() {
         }
         
         
-        # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
-        $visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -eq $activeHandle}
-        foreach ($p in $visibleProceses) {
-            write-host $p
-            write-host $p.ProcessName
-        }
-
-
-
-
-
-
-
         #$allWindowsTitles +=$title
         $dateTime = Get-Date
         
@@ -411,14 +398,13 @@ function mainJob() {
             Write-host $errorMsg
         } 
 
-        $isChrome = ($title -match "Google Chrome")
-
+        #$isChrome = ($title -match "Google Chrome")
 
         #write-host "titlesToCheck : " $titlesToCheck
 
         $titleFound = 0
        
-        #       foreach ($t in $titlesToCheck) {
+        # foreach ($t in $titlesToCheck) {
         foreach ($t in $keywords) {
             
             $result = $false
@@ -438,7 +424,6 @@ function mainJob() {
             }
         }
 
-
         # storing window title in database
         try {
             $dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
@@ -456,7 +441,6 @@ function mainJob() {
             $errorMsg | out-file -append -filepath $errorFile
             Write-host $errorMsg
         } 
-                
 
         #if (($title -eq $titlesToCheck) -and ((get-date).date -le ($forbiddenUntilAndIncluded).date)) {
         #if ($titleFound) {
@@ -487,82 +471,121 @@ function mainJob() {
     	#>
 	
       
-        $myCondition = ($titleFound -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
-        write-host "myCondition : $myCondition"
+        #$myCondition = ($titleFound -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        $myCondition = (!($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         
-        if ($myCondition) {
-               
-            write-host "test after cond4"                     
-            $text = ""
-            $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
-            $text = $text + "            Je te conseille de fermer`n"
-            $text = $text + "            cet cran rapidos !! ;-)`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "`n"
-            $text = $text + "played : $timePlayedToday`n"
-            $text = $text + "exceptionally allowed today : $timeAllowedToday`n"
-            $text = $text + $titleTxt + "`n"
-            $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
-             
+        #write-host "myCondition : $myCondition"
+        
 
-            Set-WindowStyle $Process 'MINIMIZE'
-            
-            #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
-            #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
-            
-            $nSecs = 2
-            #write-host "before popup"
-            $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
-            #write-host "after popup"
+        # if gaming is not allowed at this very moment...
+        if ($myCondition) { 
 
-            log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
-            #$errorMsg = "$($datetime) - Alerte filou !!!!" 
-            #$errorMsg | out-file -append -filepath $errorFile
+            # if the top window contains the name of a game, pop-up the warning message and minimize the window
+            if ($titleFound) {
 
-            $a = Get-Random -Minimum 2 -Maximum 6
-            For ($i = 1; $i -le $a; $i++) {
+                write-host "test after cond4"                     
+                $text = ""
+                $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
+                $text = $text + "            Je te conseille de fermer`n"
+                $text = $text + "            cet cran rapidos !! ;-)`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "`n"
+                $text = $text + "played : $timePlayedToday`n"
+                $text = $text + "exceptionally allowed today : $timeAllowedToday`n"
+                $text = $text + $titleTxt + "`n"
+                $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
+                
+
                 Set-WindowStyle $Process 'MINIMIZE'
-                Start-Sleep -s 2
+                
+                #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
+                #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
+                
+                $nSecs = 3
+                #write-host "before popup"
+                $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
+                #write-host "after popup"
+
+                log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
+                #$errorMsg = "$($datetime) - Alerte filou !!!!" 
+                #$errorMsg | out-file -append -filepath $errorFile
+
+                $a = Get-Random -Minimum 2 -Maximum 6
+                For ($i = 1; $i -le $a; $i++) {
+                    Set-WindowStyle $Process 'MINIMIZE'
+                    Start-Sleep -s 2
+                }
+            }
+            # in any case (if we are in a period where it cannot be gamed, then minimize all the windows which contain in their title the name of a game, 
+            # to avoid having the top windows just overlapping a little bit with a game/video window just behind ;-) )
+
+            # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
+            $visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and  $_.MainWindowHandle -ne 0 }
+            foreach ($p in $visibleProceses) {
+                $title = $p.MainWindowTitle.trim() 
+                #write-host "*****************", $p.ProcessName, $title
+                $titleFound = 0
+                # foreach ($t in $titlesToCheck) {
+                foreach ($t in $keywords) {
+                    $result = $false
+                    try {
+                        $result = ($title -match $t)
+                    }
+                    catch {
+                        write-host "error when evaluating expression"
+                    }
+                    if ($result) { 
+                        #write-host "test : $title matching $t ????? -> $result " 
+                        Set-WindowStyle $p 'MINIMIZE'
+                    }
+                    #write-host "result of test for $t : " $result
+                    if ($title -match $t) { 
+                        $titleFound = 1 
+                        $titleTxt = $title
+                        debug "titleFound $title !"
+                    }
+                }
             }
         }
-        else {
+
+        #else {
             # maximize window if 
             #if ($isChrome) {
             #    Set-WindowStyle $Process 'MINIMIZE'
             #}
             Start-Sleep -s $delay
-        }
+        #}
         $i ++
     }
 }
