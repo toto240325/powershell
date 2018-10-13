@@ -375,6 +375,19 @@ function mainJob() {
         }
         
         
+        # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
+        $visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -eq $activeHandle}
+        foreach ($p in $visibleProceses) {
+            write-host $p
+            write-host $p.ProcessName
+        }
+
+
+
+
+
+
+
         #$allWindowsTitles +=$title
         $dateTime = Get-Date
         
@@ -399,6 +412,7 @@ function mainJob() {
             Write-host $errorMsg
         } 
 
+        $isChrome = ($title -match "Google Chrome")
 
 
         #write-host "titlesToCheck : " $titlesToCheck
@@ -543,6 +557,10 @@ function mainJob() {
             }
         }
         else {
+            # maximize window if 
+            #if ($isChrome) {
+            #    Set-WindowStyle $Process 'MINIMIZE'
+            #}
             Start-Sleep -s $delay
         }
         $i ++
