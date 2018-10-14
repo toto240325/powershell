@@ -406,22 +406,24 @@ function mainJob() {
         $titleFound = 0
        
         # foreach ($t in $titlesToCheck) {
-        foreach ($t in $keywords) {
+        foreach ($kw in $keywords) {
             
             $result = $false
             try {
-                $result = ($title -match $t)
+                $result = ($title -match $kw)
             }
             catch {
                 write-host "error when evaluating expression"
             }
 
-            #write-host "result of test for $t : " $result
+            #write-host "result of test for $kw : " $result
             
-            if ($title -match $t) { 
+            if ($result) { 
                 $titleFound = 1 
                 $titleTxt = $title
-                debug "titleFound $title !"
+                $errorMsg = "$($datetime) - titleFound $title with kw $kw" 
+                $errorMsg | out-file -append -filepath $errorFile
+                Write-host $errorMsg
             }
         }
 
@@ -544,7 +546,7 @@ function mainJob() {
                 $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
                 #write-host "after popup"
 
-                log_error($errorMsg = "$($datetime) - Alerte filou !!!!" )
+                log_error($errorMsg = "$($datetime) - Alerte filou !!!! $titleTxt" )
                 #$errorMsg = "$($datetime) - Alerte filou !!!!" 
                 #$errorMsg | out-file -append -filepath $errorFile
 
@@ -564,20 +566,20 @@ function mainJob() {
                 #write-host "*****************", $p.ProcessName, $title
                 $titleFound = 0
                 # foreach ($t in $titlesToCheck) {
-                foreach ($t in $keywords) {
+                foreach ($kw in $keywords) {
                     $result = $false
                     try {
-                        $result = ($title -match $t)
+                        $result = ($title -match $kw)
                     }
                     catch {
                         write-host "error when evaluating expression"
                     }
                     if ($result) { 
-                        #write-host "test : $title matching $t ????? -> $result " 
+                        #write-host "test : $title matching $kw ????? -> $result " 
                         Set-WindowStyle $p 'MINIMIZE'
                     }
-                    #write-host "result of test for $t : " $result
-                    if ($title -match $t) { 
+                    #write-host "result of test for $kw : " $result
+                    if ($title -match $kw) { 
                         $titleFound = 1 
                         $titleTxt = $title
                         debug "titleFound $title !"
