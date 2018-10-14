@@ -455,6 +455,12 @@ function mainJob() {
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         $magicFileFound = (Test-Path $magicFile)
         $remainingTimeToPlay = $gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily - $timePlayedToday + 1
+        if ($titleFound -and ($remainingTimeToPlay -le 5)) {
+            $nbBeeps = 3 - $remainingTimeToPlay
+            for ($i=1; $i -le $nbBeeps; $i++) {
+                [console]::beep(2000,500)
+                }
+        }
         
         <#
         write-host "remaining to play : $remainingTimeToPlay"
