@@ -376,7 +376,7 @@ function mainJob() {
         
         
         #$allWindowsTitles +=$title
-        $dateTime = Get-Date
+        $datetime = get-date -format "yyyy-MM-dd HH-mm-ss"
         
         #$Process | select ProcessName
         $maxlen = 30

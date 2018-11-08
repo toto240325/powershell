@@ -3,7 +3,7 @@
 
 $start_invisible = $False
 $titlesToCheck = @("Untitled - Notepad", "-------New Tab - Google Chrome")
-#$titlesToCheck = @("you-NO-tube", "agar", "Agar.io - Google Chrome", "slither.io - Google Chrome", "diep.io - Google Chrome", "space1.io - Google Chrome")
+#$titlesToCheck = @("you-NO-tube", "agar","agar.io" - Google Chrome", "slither.io - Google Chrome", "diep.io - Google Chrome", "space1.io - Google Chrome")
 $outputFolder = "c:\users\derruer\mydata\mytemp\" 
 $delay = 5
 $refreshParamsRate = 3 # the params file is read every (refreshParamsRate) iteration
