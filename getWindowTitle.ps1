@@ -429,7 +429,9 @@ function mainJob() {
 
         # storing window title in database
         try {
-            $dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+            $datetime = get-date -format "yyyy-MM-dd HH-mm-ss.fff"
+
+            # $dateStr = $dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
             if ($conn.state -eq "Open") {
                 #write-host "conn is open"
             }
@@ -437,10 +439,10 @@ function mainJob() {
                 #write-host "conn is not open"
                 $conn = ConnectMySQL $user $pass $MySQLHost $database
             }
-            $iRowsInsert = myInsert2 $conn $dateStr $hostStr $title $cpu $delay $titleFound
+            $iRowsInsert = myInsert2 $conn $datetime $hostStr $title $cpu $delay $titleFound
         }
         catch {
-            $errorMsg = "$($datetime) - Error when storing in database. More Info: $($_)" 
+            $errorMsg = "$($datetime) - 101 Error when storing in database. More Info: $($_)" 
             $errorMsg | out-file -append -filepath $errorFile
             Write-host $errorMsg
         } 
