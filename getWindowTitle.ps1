@@ -1,5 +1,5 @@
 <#
-!!!!!!!! powershell get-content -tail 10 -wait d:\temp\error.log
+!!!!!!!! powershell get-content -tail 10 -wait \\192.168.0.2\d\temp\error.log
 test   .
 
 #>
@@ -21,7 +21,8 @@ $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
 $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
 write-host "$datetime starting..."
 
-
+$global:wasCreated
+$global:wasCreatedTest = 1
 
 <#
 [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
@@ -202,7 +203,7 @@ function debug($msg) {
     if ($debug) { write-host $msg }
 }
 
-function log_error($errorMsg) {
+function logError($errorMsg) {
     $errorMsg | out-file -append -filepath $errorFile
 }
 
@@ -272,16 +273,37 @@ function mainJob() {
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
 
-        <# obsolete - replaced by keywords in DB
         #re-read the params file every refreshParamsRate iteration
         if ($iterationNb -eq 0) {
-            $myMsg = "$($datetime) - reading params file !!!!" 
-            #$myMsg | out-file -append -filepath $errorFile
-            write-host $myMsg
-            . "$PSScriptRoot\params.ps1"
-            write-host "titlesToCheck from params : " $titlesToCheck
-            $titlesToCheck
+            $myMsg2 = "$($datetime) - reading params file !!!! iterationNb = $iterationNb" 
+            #Start-Sleep -s 1
+            logError($myMsg2)
+            #write-host $myMsg
+            . "$PSScriptRoot\params reload.ps1"
+            # if I find a request to reload in the param file, I call myself (whose code probably has been updated in the meantime) and exit
+            write-host "reload from params : " $reload
+            #write-host "wasCreatedTest : " $global:wasCreatedTest
+            if ($reload) {
+                #reinitialise the $reload param to $false to avoid a perpetual reloading
+                $dollar = '$'
+                $myline = $dollar + "reload = " + $dollar + "false"
+                #write-host "myline : $myline"
+                $myline | out-file -filepath "$PSScriptRoot\params reload.ps1"
+                #write-host "params reload reinitialised"
+                
+                # need to disable the mutex before being able to relaunch another instance
+                if ($global:wasCreated) {
+                    $mutant.ReleaseMutex(); 
+                    $mutant.Dispose();
+                    #write-host "mutex released"
+                }
+                #write-host "command : " $PSCommandPath
+                invoke-expression -Command $PSCommandPath
+                Start-Sleep -s 1
+            exit 
+            }
         }
+
         #>
         
         try {
@@ -347,7 +369,8 @@ function mainJob() {
             if ($title -ne "") {
                 #write-host "test : ---"      $title     "+++"
                 $cpu = $Process.TotalProcessorTime.TotalSeconds
-                #write-host "cpu : " + $cpu
+                $proc_id = $Process.id
+                write-host "cpu : " + $cpu + " proc_id : " + $proc_id
                 # let's reset the CPU counter if the title of main windows changed
                 if ($title -ne $prevTitle) { $prevCpu = $cpu } 
                 $deltaCpu = $cpu - $prevCpu
@@ -407,6 +430,7 @@ function mainJob() {
        
         # foreach ($t in $titlesToCheck) {
         foreach ($kw in $keywords) {
+            $atLeastOneTitleFound = $false
             
             $result = $false
             try {
@@ -421,7 +445,7 @@ function mainJob() {
             if ($result) { 
                 $titleFound = 1 
                 $titleTxt = $title
-                $errorMsg = "$($datetime) - titleFound $title with kw $kw" 
+                $errorMsg = "$($datetime) - Title Found $title with kw $kw" 
                 $errorMsg | out-file -append -filepath $errorFile
                 Write-host $errorMsg
             }
@@ -459,11 +483,11 @@ function mainJob() {
         $forbiddenFileFound = (Test-Path $forbiddenFile)
         $magicFileFound = (Test-Path $magicFile)
         $remainingTimeToPlay = $gameTimeExceptionallyAllowedToday + $gameTimeAllowedDaily - $timePlayedToday + 1
-        if (!($magicFileFound) -and $titleFound -and ($remainingTimeToPlay -le 5)) {
+        if (!($magicFileFound) -and $titleFound -and ($remainingTimeToPlay -le 5) -and (!($remainingTimeToPlay -le 0))) {
             $nbBeeps = 3 - $remainingTimeToPlay
-            for ($i=1; $i -le $nbBeeps; $i++) {
-                [console]::beep(2000,500)
-                }
+            for ($i = 1; $i -le $nbBeeps; $i++) {
+                [console]::beep(2000, 500)
+            }
         }
         
         <#
@@ -485,8 +509,20 @@ function mainJob() {
         #$myCondition = ($titleFound -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         $myCondition = (!($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         
-        #write-host "myCondition : $myCondition"
+        write-host "myCondition : $myCondition"
         
+        if ($titleFound) {
+
+            $errorMsg = "$($datetime) - "
+            $errorMsg = $errorMsg + " stillInForbiddenPeriod : $stillInForbiddenPeriod `r`n"
+            $errorMsg = $errorMsg + " forbiddenFileFound : $forbiddenFileFound `r`n"
+            $errorMsg = $errorMsg + " magicFileFound : $magicFileFound `r`n"
+            $errorMsg = $errorMsg + " remainingTimeToPlay : $remainingTimeToPlay `r`n"            
+            $errorMsg = $errorMsg + " myCondition : $myCondition `r`n"
+            $errorMsg | out-file -append -filepath $errorFile
+            write-host $errorMsg
+        }
+
 
         # if gaming is not allowed at this very moment...
         if ($myCondition) { 
@@ -539,30 +575,35 @@ function mainJob() {
                 
 
                 Set-WindowStyle $Process 'MINIMIZE'
-                
+                $atLeastOneTitleFound = $true
+                        
                 #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
                 #[Windows.Forms.MessageBox]::Show($text, "ALERTE AU FILOU !!!!!", [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information)
                 
                 $nSecs = 3
-                #write-host "before popup"
-                $temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
-                #write-host "after popup"
+                ##write-host "before popup"
+                #$temp = $wshell.Popup($text, $nSecs, "ALERTE AU FILOU !!!!!", 0x30)
+                ##write-host "after popup"
 
-                log_error($errorMsg = "$($datetime) - Alerte filou !!!! $titleTxt" )
-                #$errorMsg = "$($datetime) - Alerte filou !!!!" 
+                logError("$($datetime) - Alerte filou !!!! $titleTxt" )
+                #logError("$($datetime) - Alerte filou !!!!")
                 #$errorMsg | out-file -append -filepath $errorFile
 
-                $a = Get-Random -Minimum 2 -Maximum 6
+                <#
+                $a = Get-Random -Minimum 1 -Maximum 2
                 For ($i = 1; $i -le $a; $i++) {
                     Set-WindowStyle $Process 'MINIMIZE'
                     Start-Sleep -s 2
                 }
+                #>
+                #stop-process -force -id $proc_id 
             }
             # in any case (if we are in a period where it cannot be gamed, then minimize all the windows which contain in their title the name of a game, 
             # to avoid having the top windows just overlapping a little bit with a game/video window just behind ;-) )
 
             # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
-            $visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and  $_.MainWindowHandle -ne 0 }
+            $visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and $_.MainWindowHandle -ne 0 }
+            logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
             foreach ($p in $visibleProceses) {
                 $title = $p.MainWindowTitle.trim() 
                 #write-host "*****************", $p.ProcessName, $title
@@ -577,25 +618,32 @@ function mainJob() {
                         write-host "error when evaluating expression"
                     }
                     if ($result) { 
-                        #write-host "test : $title matching $kw ????? -> $result " 
+                        $atLeastOneTitleFound = $true
+                        logError("minimizing : $title ------ matching $kw")
                         Set-WindowStyle $p 'MINIMIZE'
                     }
                     #write-host "result of test for $kw : " $result
                     if ($title -match $kw) { 
                         $titleFound = 1 
                         $titleTxt = $title
-                        debug "titleFound $title !"
+                        debug "Title Found $title !"
                     }
                 }
+            }
+            write-host "atLeastOneTitleFound : $atLeastOneTitleFound"
+            if ($atLeastOneTitleFound) {
+                if ($delay -ge 3) { $delay -= 2 }
+            } else {
+                if ($delay -lt $maxDelay) { $delay += 1 }
             }
         }
 
         #else {
-            # maximize window if 
-            #if ($isChrome) {
-            #    Set-WindowStyle $Process 'MINIMIZE'
-            #}
-            Start-Sleep -s $delay
+        # maximize window if 
+        #if ($isChrome) {
+        #    Set-WindowStyle $Process 'MINIMIZE'
+        #}
+        Start-Sleep -s $delay
         #}
         $i ++
     }
@@ -612,6 +660,7 @@ $forbiddenFile = "(none)"
 . "$PSScriptRoot\params.ps1"
 . "$PSScriptRoot\params_restricted.ps1"
 
+$delay = $maxDelay
 #checking if I am the only occurence of this script running at this time
 
 <#
@@ -648,9 +697,10 @@ $errorMsg | out-file -append -filepath $errorFile
 # Obtain a system mutex that prevents more than one deployment taking place at the same time.
 [System.Threading.Mutex]$mutant;
 try {
-    [bool]$wasCreated = $false;
-    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $wasCreated);        
-    if ($wasCreated) {            
+    [bool]$global:wasCreated = $false;
+    $global:wasCreatedTest = 2
+    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $global:wasCreated);        
+    if ($global:wasCreated) {            
         mainJob;
     }
     else {
@@ -671,9 +721,10 @@ catch {
 } 
 finally {       
     write-host "!!!! Finally"
-    if ($wasCreated) {
+    if ($global:wasCreated) {
         $mutant.ReleaseMutex(); 
         $mutant.Dispose();
+        write-host "mutex released"
     }
 
     $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
