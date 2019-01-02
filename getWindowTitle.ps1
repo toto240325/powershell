@@ -300,7 +300,7 @@ function mainJob() {
                 #write-host "command : " $PSCommandPath
                 invoke-expression -Command $PSCommandPath
                 Start-Sleep -s 1
-            exit 
+                exit 
             }
         }
 
@@ -428,10 +428,17 @@ function mainJob() {
 
         $titleFound = 0
        
+
+        $keywordsWL = ("one", "two", "ISE")
+
+        write-host $keywords
+        write-host $keywordsWL
+
         # foreach ($t in $titlesToCheck) {
         foreach ($kw in $keywords) {
             $atLeastOneTitleFound = $false
             
+            # black list first :
             $result = $false
             try {
                 $result = ($title -match $kw)
@@ -440,14 +447,50 @@ function mainJob() {
                 write-host "error when evaluating expression"
             }
 
+
+            write-host "blacklist checking result for $kw : $result"
+
+            # then white list (if a blacklilsted keyword has been found) :
+            if ($result) {
+
+                $whitelistKWfound = $false
+                foreach ($kwWL in $keywordsWL) {
+                    
+                    $resultWL = $false
+                    try {
+                        $resultWL = ($title -match $kwWL)
+                    }
+                    catch {
+                        write-host "error when evaluating expression"
+                    }
+                    if ($resultWL) {
+                        $whitelistKWfound = $true
+                    }
+                }
+                write-host "whitelist checking result : $resultWL"
+                # if a WhiteList kw was found, then we consider we haven't found a suspect window title
+                if ($whitelistKWfound) {
+                    $result = $false
+                    $whitelistKW = $kwWL
+                    write-host "whitelistKW found : $whitelistKW"
+                }
+            }
+
             #write-host "result of test for $kw : " $result
             
             if ($result) { 
                 $titleFound = 1 
                 $titleTxt = $title
-                $errorMsg = "$($datetime) - Title Found $title with kw $kw" 
-                $errorMsg | out-file -append -filepath $errorFile
-                Write-host $errorMsg
+                $errorMsg1 = "$($datetime) - Title Found : "
+                $errorMsg2 = "$title"
+                $errorMsg3 = " with kw : "
+                $errorMsg4 = "$kw" 
+                $errorMsg1 + $errorMsg2 + $errorMsg3 + $errorMsg4 | out-file -append -filepath $errorFile
+                Write-host $errorMsg1 -NoNewline
+                Write-host $errorMsg2 -NoNewline -ForegroundColor Red
+                Write-host $errorMsg3 -NoNewline
+                Write-host $errorMsg4 -ForegroundColor Red
+
             }
         }
 
@@ -633,7 +676,8 @@ function mainJob() {
             write-host "atLeastOneTitleFound : $atLeastOneTitleFound"
             if ($atLeastOneTitleFound) {
                 if ($delay -ge 3) { $delay -= 2 }
-            } else {
+            }
+            else {
                 if ($delay -lt $maxDelay) { $delay += 1 }
             }
         }
