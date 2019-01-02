@@ -268,17 +268,20 @@ function mainJob() {
     #while($i -ne 10000)
     $iterationNb = -1;
     while ($true) {
-        write-host "-----------------------------------------"
-        #write-host "$($datetime) - start iteration"
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
-
+       write-host "-----------------------------------------" $iterationNb
+        #write-host "$($datetime) - start iteration"
+ 
         #re-read the params file every refreshParamsRate iteration
         if ($iterationNb -eq 0) {
             $myMsg2 = "$($datetime) - reading params file !!!! iterationNb = $iterationNb" 
+            . "$PSScriptRoot\params.ps1"
             #Start-Sleep -s 1
             logError($myMsg2)
-            #write-host $myMsg
+            #write-host $myMsg            
+            # also reading the file indicating whether the code of this script has been changed and must be reloaded
+            # (it's in another file than the main params file in order to be able to reset it easily)
             . "$PSScriptRoot\params reload.ps1"
             # if I find a request to reload in the param file, I call myself (whose code probably has been updated in the meantime) and exit
             write-host "reload from params : " $reload
