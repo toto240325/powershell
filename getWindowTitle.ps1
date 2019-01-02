@@ -207,6 +207,64 @@ function logError($errorMsg) {
     $errorMsg | out-file -append -filepath $errorFile
 }
 
+function isBlacklisted($title) {
+
+    $atLeastOneTitleBlacklisted = $false
+    foreach ($kw in $keywords) {
+        try {
+            $blackListed = ($title -match $kw)
+        }
+        catch {
+            write-host "error when evaluating expression (blacklist)"
+        }
+
+        write-host "result of blacklisted check for $kw : $blackListed"
+
+        # then white list (if a blacklilsted keyword has been found) :
+        if ($blackListed) {
+
+            $whitelistKWfound = $false
+            foreach ($kwWL in $keywordsWL) {
+                
+                $resultWL = $false
+                try {
+                    $resultWL = ($title -match $kwWL)
+                }
+                catch {
+                    write-host "error when evaluating expression"
+                }
+                if ($resultWL) {
+                    $whitelistKWfound = $true
+                }
+                #write-host "whitelist checking result : $resultWL"
+            }
+            # if a WhiteList kw was found, then we consider we haven't found a suspect window title
+            if ($whitelistKWfound) {
+                $blackListed = $false
+                $whitelistKW = $kwWL
+                write-host "whitelistKW found : $whitelistKW"
+            }
+        }
+        write-host "results after blacklist and whitelist : $blackListed"
+
+        #write-host "result of test for $kw : " $blackListed
+        
+        if ($blackListed) { 
+            $atLeastOneTitleBlacklisted = $true
+            $titleTxt = $title
+            $errorMsg1 = "$($datetime) - Title Found : "
+            $errorMsg2 = "$title"
+            $errorMsg3 = " with kw : "
+            $errorMsg4 = "$kw" 
+            $errorMsg1 + $errorMsg2 + $errorMsg3 + $errorMsg4 | out-file -append -filepath $errorFile
+            Write-host $errorMsg1 -NoNewline
+            Write-host $errorMsg2 -NoNewline -ForegroundColor Red
+            Write-host $errorMsg3 -NoNewline
+            Write-host $errorMsg4 -ForegroundColor Red
+        }
+    }
+    return $atLeastOneTitleBlacklisted
+}
 
 function mainJob() {
 
@@ -270,7 +328,7 @@ function mainJob() {
     while ($true) {
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
-       write-host "-----------------------------------------" $iterationNb
+        write-host "-----------------------------------------" $iterationNb
         #write-host "$($datetime) - start iteration"
  
         #re-read the params file every refreshParamsRate iteration
@@ -319,6 +377,20 @@ function mainJob() {
                 write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $keywords = $res.keywords
+                $errMsg = $res.errMsg
+                #$myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
+                #$myMsg | out-file -append -filepath $errorFile
+                debug $myMsg
+            }
+
+            # getting the keywords for the whilelist
+            if ($iterationNb -eq 0) {
+                $url = "http://" + $webserver + "/monitor/getKeywordsWL.php"
+                #$myMsg = "$($datetime) - calling $url" 
+                #$myMsg | out-file -append -filepath $errorFile
+                write-host $myMsg
+                $res = Invoke-RestMethod -Uri $url
+                $keywordsWL = $res.keywords
                 $errMsg = $res.errMsg
                 #$myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
                 #$myMsg | out-file -append -filepath $errorFile
@@ -432,71 +504,13 @@ function mainJob() {
         $titleFound = 0
        
 
-        $keywordsWL = ("one", "two", "ISE")
+        #$keywordsWL = ("one", "two", "ISE")
 
         write-host $keywords
         write-host $keywordsWL
-
-        # foreach ($t in $titlesToCheck) {
-        foreach ($kw in $keywords) {
-            $atLeastOneTitleFound = $false
-            
-            # black list first :
-            $result = $false
-            try {
-                $result = ($title -match $kw)
-            }
-            catch {
-                write-host "error when evaluating expression"
-            }
-
-
-            write-host "blacklist checking result for $kw : $result"
-
-            # then white list (if a blacklilsted keyword has been found) :
-            if ($result) {
-
-                $whitelistKWfound = $false
-                foreach ($kwWL in $keywordsWL) {
-                    
-                    $resultWL = $false
-                    try {
-                        $resultWL = ($title -match $kwWL)
-                    }
-                    catch {
-                        write-host "error when evaluating expression"
-                    }
-                    if ($resultWL) {
-                        $whitelistKWfound = $true
-                    }
-                }
-                write-host "whitelist checking result : $resultWL"
-                # if a WhiteList kw was found, then we consider we haven't found a suspect window title
-                if ($whitelistKWfound) {
-                    $result = $false
-                    $whitelistKW = $kwWL
-                    write-host "whitelistKW found : $whitelistKW"
-                }
-            }
-
-            #write-host "result of test for $kw : " $result
-            
-            if ($result) { 
-                $titleFound = 1 
-                $titleTxt = $title
-                $errorMsg1 = "$($datetime) - Title Found : "
-                $errorMsg2 = "$title"
-                $errorMsg3 = " with kw : "
-                $errorMsg4 = "$kw" 
-                $errorMsg1 + $errorMsg2 + $errorMsg3 + $errorMsg4 | out-file -append -filepath $errorFile
-                Write-host $errorMsg1 -NoNewline
-                Write-host $errorMsg2 -NoNewline -ForegroundColor Red
-                Write-host $errorMsg3 -NoNewline
-                Write-host $errorMsg4 -ForegroundColor Red
-
-            }
-        }
-
+    
+        $titleBlacklisted = isBlacklisted($title) 
+ 
         # storing window title in database
         try {
             $datetime = get-date -format "yyyy-MM-dd HH-mm-ss.fff"
@@ -552,12 +566,12 @@ function mainJob() {
     	#>
 	
       
-        #$myCondition = ($titleFound -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        #$myCondition = ($titleBlacklisted -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         $myCondition = (!($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         
         write-host "myCondition : $myCondition"
         
-        if ($titleFound) {
+        if ($titleBlacklisted) {
 
             $errorMsg = "$($datetime) - "
             $errorMsg = $errorMsg + " stillInForbiddenPeriod : $stillInForbiddenPeriod `r`n"
@@ -572,9 +586,9 @@ function mainJob() {
 
         # if gaming is not allowed at this very moment...
         if ($myCondition) { 
-
+            $atLeastOneTitleFound = $false
             # if the top window contains the name of a game, pop-up the warning message and minimize the window
-            if ($titleFound) {
+            if ($titleBlacklisted) {
 
                 write-host "test after cond4"                     
                 $text = ""
@@ -653,28 +667,11 @@ function mainJob() {
             foreach ($p in $visibleProceses) {
                 $title = $p.MainWindowTitle.trim() 
                 #write-host "*****************", $p.ProcessName, $title
-                $titleFound = 0
-                # foreach ($t in $titlesToCheck) {
-                foreach ($kw in $keywords) {
-                    $result = $false
-                    try {
-                        $result = ($title -match $kw)
-                    }
-                    catch {
-                        write-host "error when evaluating expression"
-                    }
-                    if ($result) { 
-                        $atLeastOneTitleFound = $true
-                        logError("minimizing : $title ------ matching $kw")
-                        Set-WindowStyle $p 'MINIMIZE'
-                    }
-                    #write-host "result of test for $kw : " $result
-                    if ($title -match $kw) { 
-                        $titleFound = 1 
-                        $titleTxt = $title
-                        debug "Title Found $title !"
-                    }
+                if (isBlacklisted($title)) {
+                    logError("minimizing visible window: $title")
+                    Set-WindowStyle $p 'MINIMIZE'
                 }
+
             }
             write-host "atLeastOneTitleFound : $atLeastOneTitleFound"
             if ($atLeastOneTitleFound) {
