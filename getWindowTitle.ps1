@@ -22,7 +22,6 @@ $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
 write-host "$datetime starting..."
 
 $global:wasCreated
-$global:wasCreatedTest = 1
 
 <#
 [void][system.reflection.Assembly]::LoadWithPartialName("MySql.Data")
@@ -343,7 +342,6 @@ function mainJob() {
             . "$PSScriptRoot\params reload.ps1"
             # if I find a request to reload in the param file, I call myself (whose code probably has been updated in the meantime) and exit
             write-host "reload from params : " $reload
-            #write-host "wasCreatedTest : " $global:wasCreatedTest
             if ($reload) {
                 #reinitialise the $reload param to $false to avoid a perpetual reloading
                 $dollar = '$'
@@ -445,7 +443,7 @@ function mainJob() {
                 #write-host "test : ---"      $title     "+++"
                 $cpu = $Process.TotalProcessorTime.TotalSeconds
                 $proc_id = $Process.id
-                write-host "cpu : " + $cpu + " proc_id : " + $proc_id
+                #write-host "cpu : " + $cpu + " proc_id : " + $proc_id
                 # let's reset the CPU counter if the title of main windows changed
                 if ($title -ne $prevTitle) { $prevCpu = $cpu } 
                 $deltaCpu = $cpu - $prevCpu
@@ -506,8 +504,8 @@ function mainJob() {
 
         #$keywordsWL = ("one", "two", "ISE")
 
-        write-host $keywords
-        write-host $keywordsWL
+        #write-host $keywords
+        #write-host $keywordsWL
     
         $titleBlacklisted = isBlacklisted($title) 
  
@@ -523,7 +521,7 @@ function mainJob() {
                 #write-host "conn is not open"
                 $conn = ConnectMySQL $user $pass $MySQLHost $database
             }
-            $iRowsInsert = myInsert2 $conn $datetime $hostStr $title $cpu $delay $titleFound
+            $iRowsInsert = myInsert2 $conn $datetime $hostStr $title $cpu $delay $titleBlacklisted
         }
         catch {
             $errorMsg = "$($datetime) - 101 Error when storing in database. More Info: $($_)" 
@@ -742,7 +740,6 @@ $errorMsg | out-file -append -filepath $errorFile
 [System.Threading.Mutex]$mutant;
 try {
     [bool]$global:wasCreated = $false;
-    $global:wasCreatedTest = 2
     $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $global:wasCreated);        
     if ($global:wasCreated) {            
         mainJob;
