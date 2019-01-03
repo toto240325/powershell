@@ -218,7 +218,7 @@ function isBlacklisted($title) {
             write-host "error when evaluating expression (blacklist)"
         }
 
-        write-host "result of blacklisted check for $kw : $blackListed"
+        #write-host "result of blacklisted check for $kw : $blackListed"
 
         # then white list (if a blacklilsted keyword has been found) :
         if ($blackListed) {
@@ -242,10 +242,10 @@ function isBlacklisted($title) {
             if ($whitelistKWfound) {
                 $blackListed = $false
                 $whitelistKW = $kwWL
-                write-host "whitelistKW found : $whitelistKW"
+                #write-host "whitelistKW found : $whitelistKW"
             }
         }
-        write-host "results after blacklist and whitelist : $blackListed"
+        #write-host "results after blacklist and whitelist : $blackListed"
 
         #write-host "result of test for $kw : " $blackListed
         
