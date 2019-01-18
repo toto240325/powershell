@@ -150,6 +150,7 @@ function myUpdate($conn, $dateStr, $hostStr, $title, $cpu) {
 }
 #------------------------------------------------------------------------------------�
 function Set-WindowStyle {
+
     <#
     .LINK
     https://gist.github.com/jakeballard/11240204
@@ -203,6 +204,7 @@ function debug($msg) {
 }
 
 function logError($errorMsg) {
+    write-host $errorMsg
     $errorMsg | out-file -append -filepath $errorFile
 }
 
@@ -440,7 +442,7 @@ function mainJob() {
                 $title = $Process.MainWindowTitle.trim() 
             }
             if ($title -ne "") {
-                #write-host "test : ---"      $title     "+++"
+                logError("test : ---" + $title +"+++")
                 $cpu = $Process.TotalProcessorTime.TotalSeconds
                 $proc_id = $Process.id
                 #write-host "cpu : " + $cpu + " proc_id : " + $proc_id
@@ -499,7 +501,7 @@ function mainJob() {
 
         #write-host "titlesToCheck : " $titlesToCheck
 
-        $titleFound = 0
+        $titleFound = $false
        
 
         #$keywordsWL = ("one", "two", "ISE")
@@ -549,18 +551,18 @@ function mainJob() {
         }
         
         <#
-        write-host "remaining to play : $remainingTimeToPlay"
-        write-host "titleFound : "($titleFound) 
-        write-host "magicFileFound : "($magicFileFound) 
-        write-host "remainingTimeToPlay -le 0 : " ($remainingTimeToPlay -le 0)
-        write-host "stillInForbiddenPeriod: "($stillInForbiddenPeriod) 
-        write-host "forbiddenFileFound: "($forbiddenFileFound) 
-        write-host "timePlayedToday : "($timePlayedToday) 
-        write-host "gameTimeExceptionallyAllowedToday: "($gameTimeExceptionallyAllowedToday) 
-        write-host "gameTimeAllowedDaily: "($gameTimeAllowedDaily) 
-        write-host "total allowed : " ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday) 
-        write-host "remaining to play : $remainingTimeToPlay"
-        write-host "timePlayedToday -gt gameTimeExceptionallyAllowedToday: " ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday)
+        logError("remaining to play : $remainingTimeToPlay")
+        logError("titleFound : $titleFound") 
+        logError("magicFileFound : $magicFileFound")
+        logError("remainingTimeToPlay -le 0 : " + ($remainingTimeToPlay -le 0))
+        logError("stillInForbiddenPeriod: " + ($stillInForbiddenPeriod))
+        logError("forbiddenFileFound: " + ($forbiddenFileFound))
+        logError("timePlayedToday : $timePlayedToday")
+        logError("gameTimeExceptionallyAllowedToday: $gameTimeExceptionallyAllowedToday")
+        logError("gameTimeAllowedDaily: $gameTimeAllowedDaily")
+        logError("total allowed : " + ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday))
+        logError("remaining to play : $remainingTimeToPlay")
+        logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
     	#>
 	
       
@@ -583,7 +585,7 @@ function mainJob() {
 
 
         # if gaming is not allowed at this very moment...
-        if ($myCondition) { 
+        if ($myCondition) {
             $atLeastOneTitleFound = $false
             # if the top window contains the name of a game, pop-up the warning message and minimize the window
             if ($titleBlacklisted) {
@@ -660,11 +662,12 @@ function mainJob() {
             # to avoid having the top windows just overlapping a little bit with a game/video window just behind ;-) )
 
             # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
-            $visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and $_.MainWindowHandle -ne 0 }
+            #$visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and $_.MainWindowHandle -ne 0 }
+            $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
             logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
             foreach ($p in $visibleProceses) {
                 $title = $p.MainWindowTitle.trim() 
-                #write-host "*****************", $p.ProcessName, $title
+                write-host "*****************", $p.ProcessName, $title
                 if (isBlacklisted($title)) {
                     logError("minimizing visible window: $title")
                     Set-WindowStyle $p 'MINIMIZE'
