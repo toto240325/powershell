@@ -550,7 +550,6 @@ function mainJob() {
             }
         }
         
-        <#
         logError("remaining to play : $remainingTimeToPlay")
         logError("titleFound : $titleFound") 
         logError("magicFileFound : $magicFileFound")
@@ -563,6 +562,22 @@ function mainJob() {
         logError("total allowed : " + ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday))
         logError("remaining to play : $remainingTimeToPlay")
         logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
+        <#
+<<<<<<< HEAD
+        logError("remaining to play : $remainingTimeToPlay")
+        logError("titleFound : $titleFound") 
+        logError("magicFileFound : $magicFileFound")
+        logError("remainingTimeToPlay -le 0 : " + ($remainingTimeToPlay -le 0))
+        logError("stillInForbiddenPeriod: " + ($stillInForbiddenPeriod))
+        logError("forbiddenFileFound: " + ($forbiddenFileFound))
+        logError("timePlayedToday : $timePlayedToday")
+        logError("gameTimeExceptionallyAllowedToday: $gameTimeExceptionallyAllowedToday")
+        logError("gameTimeAllowedDaily: $gameTimeAllowedDaily")
+        logError("total allowed : " + ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday))
+        logError("remaining to play : $remainingTimeToPlay")
+        logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
+=======
+>>>>>>> e50f5fd93a64691fc8a41991e25c97de8ed2acad
     	#>
 	
       
