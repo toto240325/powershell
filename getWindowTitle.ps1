@@ -369,6 +369,26 @@ function mainJob() {
         
         try {
 
+            # determining if we are in a grace period, i.e. if isMagicEnabled is true 
+            if ($iterationNb -eq 0) {
+                $url = "http://" + $webserver + "/monitor/magic.php?isMagicEnabled"
+                #$myMsg = "$($datetime) - calling $url" 
+                #$myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
+                $res = Invoke-RestMethod -Uri $url
+                if ($res.isMagicEnabled -eq 1 ) {
+                    $isMagicEnabled = $true 
+                }
+                else {
+                    $isMagicEnabled = $false
+                }
+
+                $errMsg = $res.errMsg
+                #$myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
+                #$myMsg | out-file -append -filepath $errorFile
+                #debug $myMsg
+            }
+
             # getting the keywords to check in the titles 
             if ($iterationNb -eq 0) {
                 $url = "http://" + $webserver + "/monitor/getKeywords.php"
@@ -442,7 +462,7 @@ function mainJob() {
                 $title = $Process.MainWindowTitle.trim() 
             }
             if ($title -ne "") {
-                logError("test : ---" + $title +"+++")
+                logError("test : ---" + $title + "+++")
                 $cpu = $Process.TotalProcessorTime.TotalSeconds
                 $proc_id = $Process.id
                 #write-host "cpu : " + $cpu + " proc_id : " + $proc_id
@@ -552,6 +572,7 @@ function mainJob() {
         
         logError("remaining to play : $remainingTimeToPlay")
         logError("titleFound : $titleFound") 
+        logError("isMagicEnabled : $isMagicEnabled")
         logError("magicFileFound : $magicFileFound")
         logError("remainingTimeToPlay -le 0 : " + ($remainingTimeToPlay -le 0))
         logError("stillInForbiddenPeriod: " + ($stillInForbiddenPeriod))
@@ -563,7 +584,6 @@ function mainJob() {
         logError("remaining to play : $remainingTimeToPlay")
         logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
         <#
-<<<<<<< HEAD
         logError("remaining to play : $remainingTimeToPlay")
         logError("titleFound : $titleFound") 
         logError("magicFileFound : $magicFileFound")
@@ -576,15 +596,14 @@ function mainJob() {
         logError("total allowed : " + ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday))
         logError("remaining to play : $remainingTimeToPlay")
         logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
-=======
->>>>>>> e50f5fd93a64691fc8a41991e25c97de8ed2acad
     	#>
 	
       
-        #$myCondition = ($titleBlacklisted -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
-        $myCondition = (!($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        #$isGamingForbidden = ($titleBlacklisted -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        #$isGamingForbidden = (!($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
+        $isGamingForbidden = (!($isMagicEnabled) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
         
-        write-host "myCondition : $myCondition"
+        write-host "isGamingForbidden : $isGamingForbidden"
         
         if ($titleBlacklisted) {
 
@@ -593,14 +612,14 @@ function mainJob() {
             $errorMsg = $errorMsg + " forbiddenFileFound : $forbiddenFileFound `r`n"
             $errorMsg = $errorMsg + " magicFileFound : $magicFileFound `r`n"
             $errorMsg = $errorMsg + " remainingTimeToPlay : $remainingTimeToPlay `r`n"            
-            $errorMsg = $errorMsg + " myCondition : $myCondition `r`n"
+            $errorMsg = $errorMsg + " isGamingForbidden : $isGamingForbidden `r`n"
             $errorMsg | out-file -append -filepath $errorFile
             write-host $errorMsg
         }
 
 
         # if gaming is not allowed at this very moment...
-        if ($myCondition) {
+        if ($isGamingForbidden) {
             $atLeastOneTitleFound = $false
             # if the top window contains the name of a game, pop-up the warning message and minimize the window
             if ($titleBlacklisted) {
