@@ -246,8 +246,9 @@ function debug($msg) {
 }
 
 function logError($errorMsg) {
-    write-host $errorMsg
-    $errorMsg | out-file -append -filepath $errorFile
+    $errMsgfull = $datetime + $errorMsg
+    write-host $errorMsgfull
+    $errorMsgfull | out-file -append -filepath $errorFile
 }
 
 function isBlacklisted($title) {
@@ -752,7 +753,7 @@ function mainJob() {
             }
             write-host "atLeastOneTitleFound : $atLeastOneTitleFound"
             if ($atLeastOneTitleFound) {
-                if ($delay -ge 3) { $delay -= 2 }
+                if ($delay -ge 2) { $delay -= 2 }
             }
             else {
                 if ($delay -lt $maxDelay) { $delay += 1 }
