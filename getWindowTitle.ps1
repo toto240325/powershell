@@ -410,6 +410,9 @@ function mainJob() {
 
         #>
         
+        # note that some params have just been reloaded from the params file and will be 
+        # overwritten with the values found on the server (if the server is up)
+
         try {
 
             # determining if we are in a grace period, i.e. if isMagicEnabled is true 
