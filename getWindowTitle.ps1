@@ -2,7 +2,13 @@
 !!!!!!!! powershell get-content -tail 10 -wait \\192.168.0.2\d\temp\error.log
 test   .
 
+to check : 
+$VerbosePreference = “Continue”
+
+
 #>
+
+
 
 
 [CmdletBinding()]
@@ -411,6 +417,9 @@ function mainJob() {
     while ($true) {
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
+        write-host ""
+        write-host ""
+        write-host ""
         write-host "-----------------------------------------" $iterationNb
         #write-host "$($datetime) - start iteration"
  
@@ -547,7 +556,7 @@ function mainJob() {
                 $title = $Process.MainWindowTitle.trim() 
             }
             if ($title -ne "") {
-                logError("test : ---" + $title + "+++")
+                logError("current window title : ---" + $title + "+++")
                 $cpu = $Process.TotalProcessorTime.TotalSeconds
                 $proc_id = $Process.id
                 #write-host "cpu : " + $cpu + " proc_id : " + $proc_id
@@ -583,7 +592,6 @@ function mainJob() {
         logError("keywordsWL : " + $keywordsWL)
         
 
-
         #$allWindowsTitles +=$title
         $datetime = get-date -format "yyyy-MM-dd HH-mm-ss"
         
@@ -593,14 +601,13 @@ function mainJob() {
         # getting window title and storing it in a CSV file
         try {
             $line = ""
-            $line = $line + " { 0 }" -f $dateTime
-            $line = $line + "`t { 0, 10 }" -f $cpu.tostring("0.000") 
-            $line = $line + "`t { 0 }" -f $deltaCpu.tostring("0.00")
-            $line = $line + "`t { 0, -25 }" -f ($title.padright($maxlen + 1)).remove($maxlen)
-            $line = $line + "`t { 0, 5 }" -f $delay
+            $line = $line + " {0}" -f $dateTime
+            $line = $line + "`t {0, 10}" -f $cpu.tostring("0.000") 
+            $line = $line + "`t {0}" -f $deltaCpu.tostring("0.00")
+            $line = $line + "`t {0, -25}" -f ($title.padright($maxlen + 1)).remove($maxlen)
+            $line = $line + "`t {0, 5}" -f $delay
             $line | Out-File $outfile -Append
             write-host $line
-            #write-host "test2"
         } 
         catch {
             $errorMsg = "$($datetime) - Error when formatting. More Info: $($_)" 
@@ -614,16 +621,13 @@ function mainJob() {
 
         $titleFound = $false
        
-
         #$keywordsWL = ("one", "two", "ISE")
 
         #write-host $keywords
         #write-host $keywordsWL
-    
-
-        write-host "test ----------------------- ***********************" isBlacklisted($title)
 
         $titleBlacklisted = isBlacklisted($title) 
+        write-host "title is blacklisted : " $titleBlacklisted
  
         # storing window title in database
         try {
@@ -664,7 +668,6 @@ function mainJob() {
             }
         }
         
-        logError("remaining to play : $remainingTimeToPlay")
         logError("titleFound : $titleFound") 
         logError("isMagicEnabled : $isMagicEnabled")
         logError("magicFileFound : $magicFileFound")
@@ -678,19 +681,7 @@ function mainJob() {
         logError("remaining to play : $remainingTimeToPlay")
         logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
         <#
-        logError("remaining to play : $remainingTimeToPlay")
-        logError("titleFound : $titleFound") 
-        logError("magicFileFound : $magicFileFound")
-        logError("remainingTimeToPlay -le 0 : " + ($remainingTimeToPlay -le 0))
-        logError("stillInForbiddenPeriod: " + ($stillInForbiddenPeriod))
-        logError("forbiddenFileFound: " + ($forbiddenFileFound))
-        logError("timePlayedToday : $timePlayedToday")
-        logError("gameTimeExceptionallyAllowedToday: $gameTimeExceptionallyAllowedToday")
-        logError("gameTimeAllowedDaily: $gameTimeAllowedDaily")
-        logError("total allowed : " + ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday))
-        logError("remaining to play : $remainingTimeToPlay")
-        logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
-    	#>
+        #>
 	
       
         #$isGamingForbidden = ($titleBlacklisted -and !($magicFileFound) -and ($remainingTimeToPlay -le 0) -and (($stillInForbiddenPeriod -or $forbiddenFileFound)) )
@@ -873,7 +864,7 @@ $errorMsg | out-file -append -filepath $errorFile
 [System.Threading.Mutex]$mutant;
 try {
     [bool]$global:wasCreated = $false;
-    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle7", [ref] $global:wasCreated);        
+    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle8", [ref] $global:wasCreated);        
     if ($global:wasCreated) {     
         sendMail "toto240325@gmail.com" "getWindowTitle starting at $dateTime" "this is the body"       
         mainJob;
