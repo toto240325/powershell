@@ -128,7 +128,8 @@ function myQuery($conn) {
     $oMYSQLCommand.CommandText = 'SELECT fgw_id,fgw_time,fgw_host,fgw_title,fgw_cpu from fgw order by fgw_id desc limit 10'
     $oMYSQLDataAdapter.SelectCommand = $oMYSQLCommand
     # Execute the query
-    $iNumberOfDataSets = $oMYSQLDataAdapter.Fill($oMYSQLDataSet, "data")
+    #$iNumberOfDataSets = $oMYSQLDataAdapter.Fill($oMYSQLDataSet, "data")
+    $oMYSQLDataAdapter.Fill($oMYSQLDataSet, "data")
 
     foreach ($oDataSet in $oMYSQLDataSet.tables[0]) {
         write-host "ID:" $oDataSet.fgw_ID "time:" $oDataSet.fgw_time "host:" $oDataSet.fgw_host "Title:" $oDataSet.fgw_title "CPU:" $oDataSet.fgw_cpu
@@ -187,7 +188,8 @@ function myUpdate($conn, $dateStr, $hostStr, $title, $cpu) {
     $oMYSQLCommand.Connection = $conn
     $oMYSQLCommand.CommandText =
     'UPDATE fgw myFgw SET fgw_cpu = 100 where myFgw.fgw_ID = 1234 and myFgw.fgw_title = "test"'
-    $iRowsAffected = $oMYSQLCommand.executeNonQuery()
+    #$iRowsAffected = $oMYSQLCommand.executeNonQuery()
+    $oMYSQLCommand.executeNonQuery()
 
 }
 #------------------------------------------------------------------------------------�
@@ -246,10 +248,37 @@ function debug($msg) {
 }
 
 function logError($errorMsg) {
-    $errMsgfull = $datetime + $errorMsg
+    $errorMsgfull = $datetime + " " + $errorMsg
     write-host $errorMsgfull
     $errorMsgfull | out-file -append -filepath $errorFile
 }
+
+function isServerAlive($webserver) {
+    $amIAlive = $false
+    try {
+        $url = "http://" + $webserver + "/monitor/isServerAlive.php"
+        $res = Invoke-RestMethod -Uri $url
+
+        #write-host "res = ->" $res.result "<-" -ForegroundColor red
+        if ($res.result -eq "YES" ) {
+            $amIAlive = $true 
+        }
+        else {
+            # this should never happen !!!!
+            $errorMsg = "$($datetime) - Server $webserver does seem to be alive, but it returned an exepected reply !?" 
+            $errorMsg | out-file -append -filepath $errorFile
+            Write-host "----------" $errorMsg -ForegroundColor Red
+        }
+    }
+    catch {
+        $errorMsg = "$($datetime) - Server $webserver doesn't seem to be alive. More Info: $($_)" 
+        $errorMsg | out-file -append -filepath $errorFile
+        Write-host "----------" $errorMsg -ForegroundColor Red
+    }
+            
+    return $amIAlive
+}
+
 
 function isBlacklisted($title) {
 
@@ -285,7 +314,7 @@ function isBlacklisted($title) {
             # if a WhiteList kw was found, then we consider we haven't found a suspect window title
             if ($whitelistKWfound) {
                 $blackListed = $false
-                $whitelistKW = $kwWL
+                #$whitelistKW = $kwWL
                 #write-host "whitelistKW found : $whitelistKW"
             }
         }
@@ -295,7 +324,7 @@ function isBlacklisted($title) {
         
         if ($blackListed) { 
             $atLeastOneTitleBlacklisted = $true
-            $titleTxt = $title
+            #$titleTxt = $title
             $errorMsg1 = "$($datetime) - Title Found : "
             $errorMsg2 = "$title"
             $errorMsg3 = " with kw : "
@@ -326,7 +355,6 @@ function mainJob() {
         [native.win]::ShowWindow($mainWindowHandle, 5) # 5: display window
     }
 
-
     <#
     if ($env:computername -eq "L02DI1453375DIT") {
         #[native.win]::ShowWindow($mainWindowHandle,0)
@@ -351,7 +379,7 @@ function mainJob() {
     $hostStr = $env:computername;
     #write-host "outfile : " $outfile
     
-    $wshell = New-Object -ComObject Wscript.Shell
+    #$wshell = New-Object -ComObject Wscript.Shell
     
     # Connect to MySQL Database
     $conn = ConnectMySQL $user $pass $MySQLHost $database
@@ -368,6 +396,17 @@ function mainJob() {
     "dateTime`tcpu`ttitle`tdelay" > $outfile
     $prevTitle = $null
     #while($i -ne 10000)
+    
+    # reading the params file for the first time
+    $myMsg2 = "$($datetime) - reading params file !!!! iterationNb = $iterationNb" 
+    logError($myMsg2)
+    . "$PSScriptRoot\params.ps1"
+
+    
+    #checking if the webserver is alive
+    $msg = isServerAlive($webserver)
+    write-host "is the server $webserver alive : " $msg  -Foregroundcolor red 
+    
     $iterationNb = -1;
     while ($true) {
         $iterationNb += 1;
@@ -438,28 +477,28 @@ function mainJob() {
             # getting the keywords to check in the titles 
             if ($iterationNb -eq 0) {
                 $url = "http://" + $webserver + "/monitor/getKeywords.php"
-                #$myMsg = "$($datetime) - calling $url" 
-                #$myMsg | out-file -append -filepath $errorFile
-                write-host $myMsg
+                $myMsg = "$($datetime) - calling $url" 
+                $myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $keywords = $res.keywords
                 $errMsg = $res.errMsg
-                #$myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
-                #$myMsg | out-file -append -filepath $errorFile
+                $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
+                $myMsg | out-file -append -filepath $errorFile
                 debug $myMsg
             }
 
             # getting the keywords for the whilelist
             if ($iterationNb -eq 0) {
                 $url = "http://" + $webserver + "/monitor/getKeywordsWL.php"
-                #$myMsg = "$($datetime) - calling $url" 
-                #$myMsg | out-file -append -filepath $errorFile
-                write-host $myMsg
+                $myMsg = "$($datetime) - calling $url" 
+                $myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $keywordsWL = $res.keywords
                 $errMsg = $res.errMsg
-                #$myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
-                #$myMsg | out-file -append -filepath $errorFile
+                $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
+                $myMsg | out-file -append -filepath $errorFile
                 debug $myMsg
             }
 
@@ -467,16 +506,16 @@ function mainJob() {
             if ($iterationNb -eq 0) {
                 $duration = 0
                 $url = "http://" + $webserver + "/monitor/getTimePlayedToday.php"
-                #$myMsg = "$($datetime) - calling $url" 
-                #$myMsg | out-file -append -filepath $errorFile
-                write-host $myMsg
+                $myMsg = "$($datetime) - calling $url" 
+                $myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 #write-host "time played today "
                 debug "res : $res"
                 #write-host "time played today " $res.timePlayedToday
                 $timePlayedToday = $res.timePlayedToday
-                #$myMsg = "$($datetime) - time already played today : $timePlayedToday" 
-                #$myMsg | out-file -append -filepath $errorFile
+                $myMsg = "$($datetime) - time already played today : $timePlayedToday" 
+                $myMsg | out-file -append -filepath $errorFile
                 debug $myMsg
             }
 
@@ -486,13 +525,13 @@ function mainJob() {
                 $duration = 0
                 $url = "http://" + $webserver + "/monitor/getGameTimeExceptionallyAllowedToday.php"
                 if ($debug) { $myMsg = "$($datetime) - calling $url" }
-                #$myMsg | out-file -append -filepath $errorFile
-                write-host $myMsg
+                $myMsg | out-file -append -filepath $errorFile
+                #write-host $myMsg
                 $res = Invoke-RestMethod -Uri $url
                 $gameTimeExceptionallyAllowedToday = [int]$res.gameTimeExceptionallyAllowedToday
                 $gameTimeAllowedDaily = [int]$res.gameTimeAllowedDaily
-                #$myMsg = "$($datetime) - time exceptionally allowed today : $gameTimeExceptionallyAllowedToday   gameTimeAllowedDaily : $gameTimeAllowedDaily" 
-                #$myMsg | out-file -append -filepath $errorFile
+                $myMsg = "$($datetime) - time exceptionally allowed today : $gameTimeExceptionallyAllowedToday   gameTimeAllowedDaily : $gameTimeAllowedDaily" 
+                $myMsg | out-file -append -filepath $errorFile
                 #write-host $myMsg
             }
 
@@ -500,7 +539,7 @@ function mainJob() {
 
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
-            $Process = Get-Process | Where-Object {$_.MainWindowHandle -eq $activeHandle}
+            $Process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
             
             #check if this is a real process or a system (?) process
             $title = ""
@@ -516,10 +555,8 @@ function mainJob() {
                 if ($title -ne $prevTitle) { $prevCpu = $cpu } 
                 $deltaCpu = $cpu - $prevCpu
                 #$Process | Select ProcessName, @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
-                #write-host "test1.2"
                 #$Process | select ProcessName
                 #$Process | Select @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
-                #write-host "test1.3"
             } 
             else {
                 #write-host "title is empty"
@@ -532,13 +569,21 @@ function mainJob() {
             $prevCpu = $cpu
         }
         catch {
+
             $errorMsg = "$($datetime) - test Failed xxx to get active Window details. More Info: $($_)" 
             $errorMsg | out-file -append -filepath $errorFile
-            Write-host $errorMsg
-            Start-Sleep -s 5
+            Write-host "----------" $errorMsg -ForegroundColor Red
+
+            # why was this ever coded ??
+            # Start-Sleep -s 5
         }
+                
+
+        logError("keyworks : " + $keywords)
+        logError("keywordsWL : " + $keywordsWL)
         
-        
+
+
         #$allWindowsTitles +=$title
         $datetime = get-date -format "yyyy-MM-dd HH-mm-ss"
         
@@ -548,11 +593,11 @@ function mainJob() {
         # getting window title and storing it in a CSV file
         try {
             $line = ""
-            $line = $line + "{0}" -f $dateTime
-            $line = $line + "`t{0,10}" -f $cpu.tostring("0.000") 
-            $line = $line + "`t{0}" -f $deltaCpu.tostring("0.00")
-            $line = $line + "`t{0,-25}" -f ($title.padright($maxlen + 1)).remove($maxlen)
-            $line = $line + "`t{0,5}" -f $delay
+            $line = $line + " { 0 }" -f $dateTime
+            $line = $line + "`t { 0, 10 }" -f $cpu.tostring("0.000") 
+            $line = $line + "`t { 0 }" -f $deltaCpu.tostring("0.00")
+            $line = $line + "`t { 0, -25 }" -f ($title.padright($maxlen + 1)).remove($maxlen)
+            $line = $line + "`t { 0, 5 }" -f $delay
             $line | Out-File $outfile -Append
             write-host $line
             #write-host "test2"
@@ -575,6 +620,9 @@ function mainJob() {
         #write-host $keywords
         #write-host $keywordsWL
     
+
+        write-host "test ----------------------- ***********************" isBlacklisted($title)
+
         $titleBlacklisted = isBlacklisted($title) 
  
         # storing window title in database
@@ -691,7 +739,7 @@ function mainJob() {
                 $text = $text + "`n"
                 $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
                 $text = $text + "            Je te conseille de fermer`n"
-                $text = $text + "            cet cran rapidos !! ;-)`n"
+                $text = $text + "            cet cran rapidos !! ; - )`n"
                 $text = $text + "`n"
                 $text = $text + "`n"
                 $text = $text + "`n"
@@ -780,6 +828,8 @@ function mainJob() {
 
 write-host "current host : " $env:computername
 $titlesToCheck = "(none)"
+$titlesToCheck = $titlesToCheck
+
 $forbiddenFile = "(none)"
 #getting public and restricted parameters $user, $pass, $database, $mySqlhost, etc
 . "$PSScriptRoot\params.ps1"
