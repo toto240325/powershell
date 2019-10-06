@@ -5,7 +5,10 @@ Set objFSO=CreateObject("Scripting.FileSystemObject")
 
 'enter the path for your PowerShell Script
 ' strPath="d:\projects\powershell\test2.ps1"
- strPath="d:\projects\powershell\getWindowTitle.ps1"
+
+'strPath="d:\projects\powershell\getWindowTitle.ps1"
+strPath =  WScript.Arguments.Item(0)
+
 
 'verify file exists
  If objFSO.FileExists(strPath) Then
