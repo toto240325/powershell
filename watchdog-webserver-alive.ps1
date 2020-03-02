@@ -90,7 +90,7 @@ logError "checking now whether $webserver is alive or not..."
 if (!(isServerAlive($webserver))) {
     logError("webserver $webserver is NOT alive !") 
     logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver is NOT alive !")
-    sendMail "eric.derruine@gmail.com" "Problem : webserver $webserver is NOT alive !" "this is the body"
+    sendMail "eric.derruine@gmail.com" "Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
 } else {
     logError("webserver $webserver is alive !")     
 }
