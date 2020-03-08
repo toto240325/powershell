@@ -8,7 +8,7 @@
 
 
 
-if ($env:computername -eq "L02DI1453375DIT-test") {
+if ($env:computername -eq "L194827317") {
     $File = "C:\mydata\mytemp\b.txt"		
     $filenameAndPath = $File
 }
