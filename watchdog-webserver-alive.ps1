@@ -25,30 +25,6 @@ else {
 }	
 
 
-function isServerAlive($webserver) {
-    $amIAlive = $false
-    try {
-        $url = "http://" + $webserver + "/monitor/isServerAlive.php"
-        $res = Invoke-RestMethod -Uri $url
-
-        #write-host "res = ->" $res.result "<-" -ForegroundColor red
-        if ($res.result -eq "YES" ) {
-            $amIAlive = $true 
-        }
-        else {
-            # this should never happen !!!!
-            $errorMsg = "$($datetime) - Server $webserver does seem to be alive, but it returned an exepected reply !?" 
-            Write-host "----------" $errorMsg -ForegroundColor Red
-        }
-    }
-    catch {
-        $errorMsg = "$($datetime) - Server $webserver doesn't seem to be alive. More Info: $($_)" 
-        Write-host "----------" $errorMsg -ForegroundColor Red
-    }
-    return $amIAlive
-}
-
-
 function sendMail($emailTo, $subject, $body) {
 
     $mailerUser = "mailer240325@gmail.com"
@@ -77,6 +53,56 @@ function logError($errorMsg) {
     $errorMsgfull | out-file -append -filepath $errorFile
 }
 
+
+
+function isServerAlive($webserver) {
+    $amIAlive = $false
+    try {
+        $url = "http://" + $webserver + "/monitor/isServerAlive.php"
+        $res = Invoke-RestMethod -Uri $url
+
+        #write-host "res = ->" $res.result "<-" -ForegroundColor red
+        if ($res.result -eq "YES" ) {
+            $amIAlive = $true 
+        }
+        else {
+            # this should never happen !!!!
+            $errorMsg = "$($datetime) - Server $webserver does seem to be alive, but it returned an exepected reply !?" 
+            Write-host "----------" $errorMsg -ForegroundColor Red
+        }
+    }
+    catch {
+        $errorMsg = "$($datetime) - Server $webserver doesn't seem to be alive. More Info: $($_)" 
+        Write-host "----------" $errorMsg -ForegroundColor Red
+    }
+    return $amIAlive
+}
+
+function isServerAlive2($webserver,$serverType) {
+    logError "checking now whether $webserver ($serverType) is alive or not..." 
+    
+    $amIAlive = $false
+    try {
+        $res = Invoke-webRequest -Uri $webserver
+
+        #write-host $res.StatusCode
+        #write-host $res.Content
+        if ($res.content -like '*Up time*') {     
+            $amIAlive = $true 
+        }
+        else {
+            # this should never happen !!!!
+            $errorMsg = "$($datetime) - Server $webserver does seem to be alive, but it returned an exepected reply !?" 
+            Write-host "----------" $errorMsg -ForegroundColor Red
+        }
+    }
+    catch {
+        $errorMsg = "$($datetime) - Server $webserver doesn't seem to be alive. More Info: $($_)" 
+        Write-host "----------" $errorMsg -ForegroundColor Red
+    }
+    return $amIAlive
+}
+
 # Main job  ------------------------------------------------------------------------
 
 $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
@@ -85,7 +111,7 @@ $errorFile = $outputFolder + "error-watchdog3.log"
 
 $webserver = "192.168.0.147"
 
-logError "checking now whether $webserver is alive or not..." 
+logError "checking now whether $webserver (watchdog) is alive or not..." 
 
 if (!(isServerAlive($webserver))) {
     logError("webserver $webserver is NOT alive !") 
@@ -93,5 +119,15 @@ if (!(isServerAlive($webserver))) {
     sendMail "eric.derruine@gmail.com" "Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
 } else {
     logError("webserver $webserver is alive !")     
+}
+
+$webserver = "http://192.168.0.9"
+$serverType = "Alarm system"
+if (!(isServerAlive2 $webserver $serverType)) {
+    logError("webserver $webserver is NOT alive !") 
+    logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver ($serverType) is NOT alive !")
+    sendMail "eric.derruine@gmail.com" "Problem : webserver $webserver ($serverType) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+} else {
+    logError("webserver $webserver ($serverType) is alive !")     
 }
 
