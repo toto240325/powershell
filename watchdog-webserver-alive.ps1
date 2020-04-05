@@ -1,4 +1,4 @@
-# to call this from cmd.exe :
+﻿# to call this from cmd.exe :
 # powershell -command "& { . .\test_send_mail.ps1; sendMail 'eric.derruine@gmail.com' 'this is a test 5' 'this is the body' }"
 # to start from powershell
 # PS> & 'C:\Users\derruer\mydata\projects\powershell\watchdog-webserver-alive.ps1'
@@ -9,19 +9,24 @@
 
 
 if ($env:computername -eq "L194827317") {
-    $File = "C:\mydata\mytemp\b.txt"		
+    $File = "$env:userprofile\mydata\mytemp\b.txt"		
     $filenameAndPath = $File
+    $outputFolder = "$env:userprofile\mydata\mytemp\" 
 }
 elseif ($env:computername -eq "HP2560") {
     $File = "d:\temp\a.txt"
+    $filenameAndPath = "d:\temp\att.txt"
+    $outputFolder = "d:\temp\" 
 }
 elseif ($env:computername -eq "MYPC3") {
     $File = "d:\temp\d.txt"
     $filenameAndPath = "d:\temp\att.txt"
+    $outputFolder = "d:\temp\" 
 }
 else {
     $File = "d:\temp\a.txt"
     $filenameAndPath = "d:\temp\att.txt"
+    $outputFolder = "d:\temp\" 
 }	
 
 
@@ -106,7 +111,7 @@ function isServerAlive2($webserver,$serverType) {
 # Main job  ------------------------------------------------------------------------
 
 $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
-$outputFolder = "d:\temp\" 
+#$outputFolder = "d:\temp\" 
 $errorFile = $outputFolder + "error-watchdog3.log"
 
 $webserver = "192.168.0.147"
@@ -116,7 +121,7 @@ logError "checking now whether $webserver (watchdog) is alive or not..."
 if (!(isServerAlive($webserver))) {
     logError("webserver $webserver is NOT alive !") 
     logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver is NOT alive !")
-    sendMail "eric.derruine@gmail.com" "Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
 } else {
     logError("webserver $webserver is alive !")     
 }
@@ -126,7 +131,7 @@ $serverType = "Alarm system"
 if (!(isServerAlive2 $webserver $serverType)) {
     logError("webserver $webserver is NOT alive !") 
     logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver ($serverType) is NOT alive !")
-    sendMail "eric.derruine@gmail.com" "Problem : webserver $webserver ($serverType) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver ($serverType) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
 } else {
     logError("webserver $webserver ($serverType) is alive !")     
 }

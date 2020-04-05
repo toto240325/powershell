@@ -1,10 +1,10 @@
-# to call this from cmd.exe :
+﻿# to call this from cmd.exe :
 # powershell -command "& { . .\test_send_mail.ps1; sendMail 'eric.derruine@gmail.com' 'this is a test 5' 'this is the body' }"
 # 
 
 
-if ($env:computername -eq "L02DI1453375DIT") {
-    $File = "C:\mydata\mytemp\b.txt"		
+if ($env:computername -eq "L194827317") {
+    $File = "$env:userprofile\mydata\mytemp\b.txt"		
     $filenameAndPath = $File
 }
 elseif ($env:computername -eq "HP2560") {
@@ -41,4 +41,4 @@ function sendMail($emailTo, $subject, $body) {
     $attachment.dispose()
 }	
 
-#sendMail "eric.derruine@gmail.com" "this is a test 4" "this is the body"
+sendMail "eric.derruine@gmail.com" "this is a test😬  4" "this is the body"
