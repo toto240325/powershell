@@ -13,6 +13,7 @@ if ($env:computername -eq "L194827317") {
     $filenameAndPath = $File
     $outputFolder = "$env:userprofile\mydata\mytemp\" 
 }
+
 elseif ($env:computername -eq "HP2560") {
     $File = "d:\temp\a.txt"
     $filenameAndPath = "d:\temp\att.txt"
