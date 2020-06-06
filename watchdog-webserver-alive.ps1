@@ -51,16 +51,22 @@ function sendMail($emailTo, $subject, $body) {
     $attachment.dispose()
 }	
 
+
+
 function logError($errorMsg) {
     $errorMsgfull = $datetime + " " + $errorMsg
     write-host $errorMsgfull
     $errorMsgfull | out-file -append -filepath $errorFile
 }
 
-function isServerAlive($webserver) {
+
+
+#------------------------------------------------------------
+# a REST server return properly formatted json result
+function isRESTserverAlive($server) {
     $amIAlive = $false
     try {
-        $url = "http://" + $webserver + "/monitor/isServerAlive.php"
+        $url = "http://" + $server + "/monitor/isServerAlive.php"
         $res = Invoke-RestMethod -Uri $url
 
         #write-host "res = ->" $res.result "<-" -ForegroundColor red
@@ -69,19 +75,20 @@ function isServerAlive($webserver) {
         }
         else {
             # this should never happen !!!!
-            $errorMsg = "$($datetime) - Server $webserver does seem to be alive, but it returned an exepected reply !?" 
+            $errorMsg = "$($datetime) - Server $server does seem to be alive, but it returned an exepected reply !?" 
             Write-host "----------" $errorMsg -ForegroundColor Red
         }
     }
     catch {
-        $errorMsg = "$($datetime) - Server $webserver doesn't seem to be alive. More Info: $($_)" 
+        $errorMsg = "$($datetime) - Server $server doesn't seem to be alive. More Info: $($_)" 
         Write-host "----------" $errorMsg -ForegroundColor Red
     }
     return $amIAlive
 }
 
-function isServerAlive2($webserver,$serverType) {
-    logError "checking now whether $webserver ($serverType) is alive or not..." 
+#------------------------------------------------------------
+# a REST server doesn NOT returns properly formatted json result, just contents
+function isWebServerAlive($webserver,$stringToCheck) {
     
     $amIAlive = $false
     try {
@@ -89,7 +96,7 @@ function isServerAlive2($webserver,$serverType) {
 
         #write-host $res.StatusCode
         #write-host $res.Content
-        if ($res.content -like '*Up time*') {     
+        if ($res.content -like $stringToCheck) {     
             $amIAlive = $true 
         }
         else {
@@ -105,27 +112,17 @@ function isServerAlive2($webserver,$serverType) {
     return $amIAlive
 }
 
-def sendMailIfNotAlive($webserver):
-    logError "checking now whether $webserver (watchdog) is alive or not..." 
-    	if (!(isServerAlive($webserver))) {
-		logError("webserver $webserver is NOT alive !") 
-		logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver is NOT alive !")
-		sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
-	} else {
-		logError("webserver $webserver is alive !")     
-	}
-
-def sendMailIfNotAlive2($webserver $serverType):
-    logError "checking now whether $webserver (watchdog) is alive or not..." 
-    if (!(isServerAlive2 $webserver $serverType)) {
-        logError("webserver $webserver is NOT alive !") 
-        logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver ($serverType) is NOT alive !")
-        sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver ($serverType) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
-    } else {
-        logError("webserver $webserver ($serverType) is alive !")     
+#------------------------------------------------------------
+# a plain server is neither a REST server nor a webserver
+function isServerAlive($server) {
+    
+    $amIAlive = $false
+    $Ping = Test-Connection -ComputerName $server -ErrorAction SilentlyContinue
+    if ($Ping.statuscode -eq 0) {
+        $amIAlive = $true
     }
-
-
+    return $amIAlive
+}
 
 # Main job  ------------------------------------------------------------------------
 
@@ -133,13 +130,36 @@ $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
 #$outputFolder = "d:\temp\" 
 $errorFile = $outputFolder + "error-watchdog3.log"
 
-$webserver = "192.168.0.147"
-sendMailIfNotAlive($raspberry)
 
-$raspberry = "192.168.0.98"
-sendMailIfNotAlive($raspberry)
+$RESTserver = "192.168.0.147"
+$desc = "NB250"
+logError "checking now whether $desc is alive or not..." 
+if (!(isRESTserverAlive($RESTserver))) {
+    logError("webserver $RESTserver is NOT alive !") 
+    logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $RESTserver ($desc) is NOT alive !")
+    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $RESTserver ($desc) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+} else {
+    logError("webserver $RESTserver ($desc) is alive !")     
+}
 
 $webserver = "http://192.168.0.9"
-$serverType = "Alarm system Eurotec"
-sendMailIfNotAlive2($webserver $serverType)
+$desc = "Alarm system Eurotec"
+logError "checking now whether $desc is alive or not..." 
+if (!(isWebServerAlive $webserver '*Up time*')) {
+    logError("webserver $webserver is NOT alive !") 
+    logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver ($desc) is NOT alive !")
+    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver ($desc) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+} else {
+    logError("webserver $webserver ($desc) is alive !")     
+}
+
+$server = "192.168.0.98"
+$desc = "Raspberry"
+if (!(isServerAlive $server)) {
+    logError("server $server is NOT alive !") 
+    logError("sending Mail to eric.derruine@gmail.com : Problem : server $server ($desc) is NOT alive !")
+    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : server $server ($desc) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+} else {
+    logError("server $server ($desc) is alive !")     
+}
 
