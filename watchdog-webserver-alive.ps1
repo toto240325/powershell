@@ -51,15 +51,11 @@ function sendMail($emailTo, $subject, $body) {
     $attachment.dispose()
 }	
 
-
-
 function logError($errorMsg) {
     $errorMsgfull = $datetime + " " + $errorMsg
     write-host $errorMsgfull
     $errorMsgfull | out-file -append -filepath $errorFile
 }
-
-
 
 function isServerAlive($webserver) {
     $amIAlive = $false
@@ -109,6 +105,17 @@ function isServerAlive2($webserver,$serverType) {
     return $amIAlive
 }
 
+def sendMailIfNotAlive(server):
+	if (!(isServerAlive($webserver))) {
+		logError("webserver $webserver is NOT alive !") 
+		logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver is NOT alive !")
+		sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+	} else {
+		logError("webserver $webserver is alive !")     
+	}
+
+
+
 # Main job  ------------------------------------------------------------------------
 
 $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
@@ -119,13 +126,9 @@ $webserver = "192.168.0.147"
 
 logError "checking now whether $webserver (watchdog) is alive or not..." 
 
-if (!(isServerAlive($webserver))) {
-    logError("webserver $webserver is NOT alive !") 
-    logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver is NOT alive !")
-    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
-} else {
-    logError("webserver $webserver is alive !")     
-}
+$raspberry = "192.168.0.98"
+sendMailIfNotAlive($raspberry)
+
 
 $webserver = "http://192.168.0.9"
 $serverType = "Alarm system"
