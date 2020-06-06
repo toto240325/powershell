@@ -106,7 +106,8 @@ function isServerAlive2($webserver,$serverType) {
 }
 
 def sendMailIfNotAlive($webserver):
-	if (!(isServerAlive($webserver))) {
+    logError "checking now whether $webserver (watchdog) is alive or not..." 
+    	if (!(isServerAlive($webserver))) {
 		logError("webserver $webserver is NOT alive !") 
 		logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver is NOT alive !")
 		sendMail "eric.derruine@gmail.com" "😬 😬 Problem : webserver $webserver is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
@@ -115,6 +116,7 @@ def sendMailIfNotAlive($webserver):
 	}
 
 def sendMailIfNotAlive2($webserver $serverType):
+    logError "checking now whether $webserver (watchdog) is alive or not..." 
     if (!(isServerAlive2 $webserver $serverType)) {
         logError("webserver $webserver is NOT alive !") 
         logError("sending Mail to eric.derruine@gmail.com : Problem : webserver $webserver ($serverType) is NOT alive !")
@@ -132,16 +134,12 @@ $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
 $errorFile = $outputFolder + "error-watchdog3.log"
 
 $webserver = "192.168.0.147"
-
-logError "checking now whether $webserver (watchdog) is alive or not..." 
+sendMailIfNotAlive($raspberry)
 
 $raspberry = "192.168.0.98"
 sendMailIfNotAlive($raspberry)
 
-
-
-$EurotecServer = "http://192.168.0.9"
-$webserver = $EurotecServer
+$webserver = "http://192.168.0.9"
 $serverType = "Alarm system Eurotec"
 sendMailIfNotAlive2($webserver $serverType)
 
