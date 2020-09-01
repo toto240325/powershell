@@ -670,7 +670,7 @@ function mainJob() {
         
             $process = Get-Process | Where-Object { $_.id -eq $myPid }
             #"test 2 : process.processName : " + $process.processName + "     process.ID " +  $process.id | write-host
-            write-host "-------------------"
+            write-host "------------------"
             # at this point, we have the right process and we can ask it to reactive it's main window (and to let the 
             # context menu disappear)
             show-process $process 'SHOW'
