@@ -155,11 +155,11 @@ if (!(isWebServerAlive $webserver '*Up time*')) {
 
 $server = "192.168.0.98"
 $desc = "Raspberry"
-if (!(isServerAlive $server)) {
-    logError("server $server is NOT alive !") 
-    logError("sending Mail to eric.derruine@gmail.com : Problem : server $server ($desc) is NOT alive !")
-    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : server $server ($desc) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
-} else {
-    logError("server $server ($desc) is alive !")     
-}
+#if (!(isServerAlive $server)) {
+#    logError("server $server is NOT alive !") 
+#    logError("sending Mail to eric.derruine@gmail.com : Problem : server $server ($desc) is NOT alive !")
+#    sendMail "eric.derruine@gmail.com" "😬 😬 Problem : server $server ($desc) is NOT alive !" "this message is sent by task D:\projects\powershell\watchdog-webserver-alive.ps1 on mypc3"
+#} else {
+#    logError("server $server ($desc) is alive !")     
+#}
 

@@ -1,15 +1,9 @@
 <#
 !!!!!!!! powershell get-content -tail 10 -wait \\192.168.0.2\d\temp\error.log
-test   .
 
 to check : 
 $VerbosePreference = “Continue”
-
-
 #>
-
-
-
 
 [CmdletBinding()]
 Param(
@@ -22,6 +16,24 @@ public class UserWindows {
 public static extern IntPtr GetForegroundWindow();
 }
 "@
+
+
+
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class Win32Api
+{
+[System.Runtime.InteropServices.DllImportAttribute( "User32.dll", EntryPoint =  "GetWindowThreadProcessId" )]
+public static extern int GetWindowThreadProcessId ( [System.Runtime.InteropServices.InAttribute()] System.IntPtr hWnd, out int lpdwProcessId );
+
+[DllImport("User32.dll", CharSet = CharSet.Auto)]
+public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+}
+"@
+
+
 
 $datetime = get-date -format "yyyy-MM-dd-HH-mm-ss"
 $outfile = $outputFolder + "test-$datetime-$mainWindowHandle.csv"
@@ -215,6 +227,52 @@ function Set-WindowStyle {
         [string] $Style = 'SHOW'
     )
 
+<#
+%
+%   This page describes the difference between these states:
+%
+%   <http://msdn.microsoft.com/library/en-us/winui/winui/windowsuserinterface/windowing/windows/windowreference/windowfunctions/showwindow.asp>
+%
+%   FORCEMINIMIZE Windows 2000/XP: Minimizes a window, even if the thread that
+%   owns the window is hung. This flag should only be used when minimizing
+%   windows from a different thread.
+% 
+%   HIDE Hides the window and activates another window.
+% 
+%   MAXIMIZE Maximizes the specified window.
+% 
+%   MINIMIZE Minimizes the specified window and activates the next top-level
+%   window in the Z order.
+% 
+%   RESTORE Activates and displays the window. If the window is minimized or
+%   maximized, the system restores it to its original size and position. An
+%   application should specify this flag when restoring a minimized window.
+% 
+%   SHOW Activates the window and displays it in its current size and position. 
+% 
+%   SHOWDEFAULT Sets the show state based on the SW_ value specified in the
+%   STARTUPINFO structure passed to the CreateProcess function by the program
+%   that started the application. 
+% 
+%   SHOWMAXIMIZED Activates the window and displays it as a maximized window.
+% 
+%   SHOWMINIMIZED Activates the window and displays it as a minimized window.
+% 
+%   SHOWMINNOACTIVE Displays the window as a minimized window. This value is
+%   similar to SW_SHOWMINIMIZED, except the window is not activated.
+% 
+%   SHOWNA Displays the window in its current size and position. This value is
+%   similar to SW_SHOW, except the window is not activated.
+% 
+%   SHOWNOACTIVATE Displays a window in its most recent size and position. This
+%   value is similar to SW_SHOWNORMAL, except the window is not actived.
+% 
+%   SHOWNORMAL Activates and displays a window. If the window is minimized or
+%   maximized, the system restores it to its original size and position. An
+%   application should specify this flag when displaying the window for the
+%   first time.
+%#>
+
     BEGIN {
         $WindowStates = @{
             'FORCEMINIMIZE'   = 11
@@ -344,6 +402,54 @@ function isBlacklisted($title) {
     }
     return $atLeastOneTitleBlacklisted
 }
+
+function Show-Process($process, [Switch]$Maximize)
+{
+
+    $WindowStates = @{
+        'FORCEMINIMIZE'   = 11
+        'HIDE'            = 0
+        'MAXIMIZE'        = 3
+        'MINIMIZE'        = 6
+        'RESTORE'         = 9
+        'SHOW'            = 5
+        'SHOWDEFAULT'     = 10
+        'SHOWMAXIMIZED'   = 3
+        'SHOWMINIMIZED'   = 2
+        'SHOWMINNOACTIVE' = 7
+        'SHOWNA'          = 8
+        'SHOWNOACTIVATE'  = 4
+        'SHOWNORMAL'      = 1
+    }
+
+
+    $sig = '
+    [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] public static extern int SetForegroundWindow(IntPtr hwnd);
+  '
+  
+  if ($Maximize) { $Mode = 3 } else { $Mode = 5 }
+  $type = Add-Type -MemberDefinition $sig -Name WindowAPI -PassThru
+  $hwnd = $process.MainWindowHandle
+  $null = $type::ShowWindowAsync($hwnd, $Mode)
+  $null = $type::SetForegroundWindow($hwnd) 
+}
+
+
+function minimizeAllVisibleNotAllowedWindows{
+    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
+    logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
+    foreach ($p in $visibleProceses) {
+        $title = $p.MainWindowTitle.trim() 
+        #write-host "*****************", $p.ProcessName, $title, $p.id
+        if (isBlacklisted($title,$p.id)) {
+            logError("minimizing visible window: $title")
+            Set-WindowStyle $p 'MINIMIZE'
+        }
+
+    }
+}
+
 
 function mainJob() {
 
@@ -494,7 +600,7 @@ function mainJob() {
                 $errMsg = $res.errMsg
                 $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
                 $myMsg | out-file -append -filepath $errorFile
-                debug $myMsg
+                #debug $myMsg
             }
 
             # getting the keywords for the whilelist
@@ -508,7 +614,7 @@ function mainJob() {
                 $errMsg = $res.errMsg
                 $myMsg = "$($datetime) - keywords found in DB : " + $keywords + " errMsg : " + $errMsg 
                 $myMsg | out-file -append -filepath $errorFile
-                debug $myMsg
+                #debug $myMsg
             }
 
             # checking homw much time has already been played today
@@ -545,33 +651,81 @@ function mainJob() {
             }
 
             debug "get info process"
+            write-host "-----------------------" -ForegroundColor red
 
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
-            $Process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
-            
+            #$process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
+            # at this point $process is a process that might be the one owning the active window, or it could be something
+            # so let's find the real process owner of the whole thread
+
+            #write-host $process.processname,$process.MainWindowTitle
+            #$HWND = [Win32Api]::FindWindow( "OpusApp", $caption )
+            #$HWND = $activeHandle
+        
+            $myPid = [IntPtr]::Zero
+            [Win32Api]::GetWindowThreadProcessId( $activeHandle, [ref] $myPid ) | out-null
+            #"test 1 : process.processName : " + $process.processName + "     process.ID " +  $process.id | write-host
+            #"PID=" + $myPid | write-host 
+        
+            $process = Get-Process | Where-Object { $_.id -eq $myPid }
+            #"test 2 : process.processName : " + $process.processName + "     process.ID " +  $process.id | write-host
+            write-host "-------------------"
+            # at this point, we have the right process and we can ask it to reactive it's main window (and to let the 
+            # context menu disappear)
+            show-process $process 'SHOW'
+
+            $ActiveHandle = [userWindows]::GetForegroundWindow()
+            $process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
+        
             #check if this is a real process or a system (?) process
             $title = ""
-            if ($Process) { 
-                $title = $Process.MainWindowTitle.trim() 
+            if ($process) { 
+                $title = $process.MainWindowTitle.trim() 
             }
+                
             if ($title -ne "") {
                 logError("current window title : ---" + $title + "+++")
-                $cpu = $Process.TotalProcessorTime.TotalSeconds
-                $proc_id = $Process.id
+                $cpu = $process.TotalProcessorTime.TotalSeconds
+                $proc_id = $process.id
                 #write-host "cpu : " + $cpu + " proc_id : " + $proc_id
                 # let's reset the CPU counter if the title of main windows changed
                 if ($title -ne $prevTitle) { $prevCpu = $cpu } 
                 $deltaCpu = $cpu - $prevCpu
-                #$Process | Select ProcessName, @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
-                #$Process | select ProcessName
-                #$Process | Select @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
+                #$process | Select ProcessName, @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
+                #$process | select ProcessName
+                #$process | Select @{Name="AppTitle";Expression= {($_.MainWindowTitle)}}
             } 
             else {
-                #write-host "title is empty"
+                write-host "title is empty"
                 $title = ""
                 $cpu = 0
                 $deltaCpu = 0
+
+                <#
+                logError("current window title is empty, so make sure all chrome processes are make invisible")
+                
+                #make sure all chrome process are visible (i.e. the context menu is sent away if it had been activated)
+                
+                $myp = Get-Process | Where-Object { $_.processName -like "chrome*" }
+                foreach ($p in $myp) {
+                    $title = $p.MainWindowTitle.trim() 
+                    $procName = $p.processName
+                    write-host "*****************", $procName, $title, $p.id, $p.ProcessName, $p.MainWindowHandle, $p.MainWindowTitle
+                    Show-Process -Process $p
+                }
+
+                #now that the context menu has been sent away, the normal minimize window should work
+                $myp = Get-Process | Where-Object { $_.processName -like "chrome*" }
+                foreach ($p in $myp) {
+                    $title = $p.MainWindowTitle.trim() 
+                    $procName = $p.processName
+                    write-host "*****************", $procName, $title, $p.id, $p.ProcessName, $p.MainWindowHandle, $p.MainWindowTitle
+                    Set-WindowStyle $p 'MINIMIZE'
+                }
+                   
+                #>
+                
             }      
             
             $prevTitle = $title
@@ -588,14 +742,38 @@ function mainJob() {
         }
                 
 
-        logError("keyworks : " + $keywords)
-        logError("keywordsWL : " + $keywordsWL)
+<#
+seems this functionality has been implemented better in another part of the code.  I had forgotten about that...
+
+        # check if there are processes that we want to run either in the foreground or minimized (to avoid cheating by 
+        # by having VLC or chrome running normally but slightly overlapped by another window (in the foreground) 
+        # in order to not be monitored by the this script)
+
+        $VLCprocess = Get-Process | Where {$_.ProcessName -Like "vlc*"}
+        if ($VLCprocess) {
+            #$vlctitle = $process.MainWindowTitle.trim() 
+            $VLChandle = $process.MainWindowHandle 
+        
+            #write-host "foreground win : " $ActiveHandle "($fgtitle)"
+            #write-host "VLC window :     " $VLChandle    "($vlctitle)"  
+            if ($ActiveHandle -ne $VLChandle) {
+                #write-host "minimizing VLC window"
+                #Set-WindowStyle $VLCprocess 'MAXIMIZE'
+                #Set-WindowStyle $VLCprocess 'MINIMIZE'
+            } else {
+                #write-host "no action because VLC in foreground"
+            }
+        }   
+#>  
+
+        #logError("keywords : " + $keywords)
+        #logError("keywordsWL : " + $keywordsWL)
         
 
         #$allWindowsTitles +=$title
         $datetime = get-date -format "yyyy-MM-dd HH-mm-ss"
         
-        #$Process | select ProcessName
+        #$process | select ProcessName
         $maxlen = 30
         
         # getting window title and storing it in a CSV file
@@ -626,8 +804,8 @@ function mainJob() {
         #write-host $keywords
         #write-host $keywordsWL
 
-        $titleBlacklisted = isBlacklisted($title) 
-        write-host "title is blacklisted : " $titleBlacklisted
+        $titleBlacklisted = isBlacklisted($title,$pid) 
+        write-host "title is blacklisted : " $titleBlacklisted "  pid : " $pid
  
         # storing window title in database
         try {
@@ -668,6 +846,7 @@ function mainJob() {
             }
         }
         
+        <#
         logError("titleFound : $titleFound") 
         logError("isMagicEnabled : $isMagicEnabled")
         logError("magicFileFound : $magicFileFound")
@@ -680,7 +859,6 @@ function mainJob() {
         logError("total allowed : " + ($gameTimeAllowedDaily + $gameTimeExceptionallyAllowedToday))
         logError("remaining to play : $remainingTimeToPlay")
         logError("timePlayedToday -gt gameTimeExceptionallyAllowedToday: " + ($timePlayedToday -gt $gameTimeExceptionallyAllowedToday))
-        <#
         #>
 	
       
@@ -753,7 +931,7 @@ function mainJob() {
                 $text = $text + "++++++++++++++++++++++++++++++++++++++++++++++`n" 
                 
 
-                Set-WindowStyle $Process 'MINIMIZE'
+                Set-WindowStyle $process 'MINIMIZE'
                 $atLeastOneTitleFound = $true
                         
                 #[System.Reflection.Assembly]::LoadWithPartialName(System.Windows.Forms)
@@ -771,7 +949,7 @@ function mainJob() {
                 <#
                 $a = Get-Random -Minimum 1 -Maximum 2
                 For ($i = 1; $i -le $a; $i++) {
-                    Set-WindowStyle $Process 'MINIMIZE'
+                    Set-WindowStyle $process 'MINIMIZE'
                     Start-Sleep -s 2
                 }
                 #>
@@ -782,17 +960,8 @@ function mainJob() {
 
             # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
             #$visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and $_.MainWindowHandle -ne 0 }
-            $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
-            logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
-            foreach ($p in $visibleProceses) {
-                $title = $p.MainWindowTitle.trim() 
-                write-host "*****************", $p.ProcessName, $title
-                if (isBlacklisted($title)) {
-                    logError("minimizing visible window: $title")
-                    Set-WindowStyle $p 'MINIMIZE'
-                }
+            minimizeAllVisibleNotAllowedWindows
 
-            }
             write-host "atLeastOneTitleFound : $atLeastOneTitleFound"
             if ($atLeastOneTitleFound) {
                 if ($delay -ge 2) { $delay -= 2 }
@@ -805,7 +974,7 @@ function mainJob() {
         #else {
         # maximize window if 
         #if ($isChrome) {
-        #    Set-WindowStyle $Process 'MINIMIZE'
+        #    Set-WindowStyle $process 'MINIMIZE'
         #}
         Start-Sleep -s $delay
         #}
