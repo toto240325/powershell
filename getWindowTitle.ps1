@@ -438,15 +438,42 @@ function Show-Process($process, [Switch]$Maximize)
 
 function minimizeAllVisibleNotAllowedWindows{
     $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
-    logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
+    logError("minimizing all visible not allowed windows  * * * * * * * * * * * * * * * * * *")
+    $chromeFound = $false
     foreach ($p in $visibleProceses) {
         $title = $p.MainWindowTitle.trim() 
-        #write-host "*****************", $p.ProcessName, $title, $p.id
+        write-host "*****************", $p.ProcessName, $title, $p.id
         if (isBlacklisted($title,$p.id)) {
             logError("minimizing visible window: $title")
             Set-WindowStyle $p 'MINIMIZE'
         }
+        <#
+        write-host "testing chrome : $title" -BackgroundColor red
+        if ($title.indexOf("Chrome") -ne -1) {
+            $chromeFound = $true
+            logError("minimizing visible CHROME window: $title")
+            Set-WindowStyle $p 'MINIMIZE'
+        } else {
+            write-host "not chrome !" -BackgroundColor Blue
+        }
+        #>
+        
+    }
+}
 
+function minimizeAllVisibleNotAllowedWindowsWhichAreNotOnTop($titleTopWindow) {
+    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
+    logError("minimizing all visible not allowed windows which are not on top * * * * * * * * * * * * * * * * * *")
+    logError("title Top Window : $titleTopWindow")
+    foreach ($p in $visibleProceses) {
+        $title = $p.MainWindowTitle.trim() 
+        write-host "*****************", $p.ProcessName, $title, $p.id
+        if ($title -ne $titleTopWindow) {
+            if (isBlacklisted($title,$p.id)) {
+                logError("minimizing visible window: $title")
+                Set-WindowStyle $p 'MINIMIZE'
+            }
+        }
     }
 }
 
@@ -523,10 +550,7 @@ function mainJob() {
     while ($true) {
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
-        write-host ""
-        write-host ""
-        write-host ""
-        write-host "-----------------------------------------" $iterationNb
+        write-host "----------------------------------------- iter:" $iterationNb
         #write-host "$($datetime) - start iteration"
  
         #re-read the params file every refreshParamsRate iteration
@@ -685,6 +709,32 @@ function mainJob() {
             }
                 
             if ($title -ne "") {
+
+                # if we are not in the magic mode, and if the current windows is chrome, then 
+                # maximize or minimize that window (depending on whether it's allowed or not) 
+                # because if there are several chrome windows visible, only the top one is "seen" by 
+                # the get-process
+
+                if ($title.contains("Chrome")) {
+                    write-host "----- chrome window is on top ----" -backgroundcolor red
+                    if (!$isMagicEnabled) {
+                        write-host "maximizing that chrome window"
+                        $a = Get-Random -Minimum 7 -Maximum 12
+                        For ($i = 1; $i -le $a; $i++) {
+                            $rm = Get-Random -Minimum 500 -Maximum 2000
+                            if (($isGamingForbidden) -and (isBlacklisted($title,$process.id))) {
+                                Set-WindowStyle $process 'MINIMIZE'
+                            } else {
+                                Set-WindowStyle $process 'MAXIMIZE'
+                            }
+
+                            Start-Sleep -m $rm
+                        }    
+                    }
+
+                }
+
+
                 logError("current window title : ---" + $title + "+++")
                 $cpu = $process.TotalProcessorTime.TotalSeconds
                 $proc_id = $process.id
@@ -742,29 +792,29 @@ function mainJob() {
         }
                 
 
-<#
-seems this functionality has been implemented better in another part of the code.  I had forgotten about that...
+        <#
+        seems this functionality has been implemented better in another part of the code.  I had forgotten about that...
 
-        # check if there are processes that we want to run either in the foreground or minimized (to avoid cheating by 
-        # by having VLC or chrome running normally but slightly overlapped by another window (in the foreground) 
-        # in order to not be monitored by the this script)
+                # check if there are processes that we want to run either in the foreground or minimized (to avoid cheating by 
+                # by having VLC or chrome running normally but slightly overlapped by another window (in the foreground) 
+                # in order to not be monitored by the this script)
 
-        $VLCprocess = Get-Process | Where {$_.ProcessName -Like "vlc*"}
-        if ($VLCprocess) {
-            #$vlctitle = $process.MainWindowTitle.trim() 
-            $VLChandle = $process.MainWindowHandle 
-        
-            #write-host "foreground win : " $ActiveHandle "($fgtitle)"
-            #write-host "VLC window :     " $VLChandle    "($vlctitle)"  
-            if ($ActiveHandle -ne $VLChandle) {
-                #write-host "minimizing VLC window"
-                #Set-WindowStyle $VLCprocess 'MAXIMIZE'
-                #Set-WindowStyle $VLCprocess 'MINIMIZE'
-            } else {
-                #write-host "no action because VLC in foreground"
-            }
-        }   
-#>  
+                $VLCprocess = Get-Process | Where {$_.ProcessName -Like "vlc*"}
+                if ($VLCprocess) {
+                    #$vlctitle = $process.MainWindowTitle.trim() 
+                    $VLChandle = $process.MainWindowHandle 
+                
+                    #write-host "foreground win : " $ActiveHandle "($fgtitle)"
+                    #write-host "VLC window :     " $VLChandle    "($vlctitle)"  
+                    if ($ActiveHandle -ne $VLChandle) {
+                        #write-host "minimizing VLC window"
+                        #Set-WindowStyle $VLCprocess 'MAXIMIZE'
+                        #Set-WindowStyle $VLCprocess 'MINIMIZE'
+                    } else {
+                        #write-host "no action because VLC in foreground"
+                    }
+                }   
+        #>  
 
         #logError("keywords : " + $keywords)
         #logError("keywordsWL : " + $keywordsWL)
@@ -908,7 +958,7 @@ seems this functionality has been implemented better in another part of the code
                 $text = $text + "`n"
                 $text = $text + "            Bien essay" + [convert]::ToChar(233) + " !`n"
                 $text = $text + "            Je te conseille de fermer`n"
-                $text = $text + "            cet cran rapidos !! ; - )`n"
+                $text = $text + "            cet écran rapidos !! ; - )`n"
                 $text = $text + "`n"
                 $text = $text + "`n"
                 $text = $text + "`n"
@@ -960,7 +1010,6 @@ seems this functionality has been implemented better in another part of the code
 
             # for all the processes having a visible window, if the title contains a game keyword and gaming is not allowed, minimize the window
             #$visibleProceses = Get-Process | Where-Object {$_.MainWindowHandle -ne $activeHandle -and $_.MainWindowHandle -ne 0 }
-            minimizeAllVisibleNotAllowedWindows
 
             write-host "atLeastOneTitleFound : $atLeastOneTitleFound"
             if ($atLeastOneTitleFound) {
@@ -969,6 +1018,12 @@ seems this functionality has been implemented better in another part of the code
             else {
                 if ($delay -lt $maxDelay) { $delay += 1 }
             }
+        }
+
+        if ($isGamingForbidden) {
+            minimizeAllVisibleNotAllowedWindows
+        } else {
+            minimizeAllVisibleNotAllowedWindowsWhichAreNotOnTop($title)
         }
 
         #else {
@@ -1033,7 +1088,7 @@ $errorMsg | out-file -append -filepath $errorFile
 [System.Threading.Mutex]$mutant;
 try {
     [bool]$global:wasCreated = $false;
-    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle8", [ref] $global:wasCreated);        
+    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle9", [ref] $global:wasCreated);        
     if ($global:wasCreated) {     
         sendMail "toto240325@gmail.com" "getWindowTitle starting at $dateTime" "this is the body"       
         mainJob;

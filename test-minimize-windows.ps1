@@ -39,7 +39,7 @@ function Show-Process($Process, [Switch]$Maximize)
     [DllImport("user32.dll")] public static extern int SetForegroundWindow(IntPtr hwnd);
   '
   
-  if ($Maximize) { $Mode = 3 } else { $Mode = 4 }
+  if ($Maximize) { $Mode = 3 } else { $Mode = 5 }
   $type = Add-Type -MemberDefinition $sig -Name WindowAPI -PassThru
   $hwnd = $process.MainWindowHandle
   $null = $type::ShowWindowAsync($hwnd, $Mode)
@@ -204,7 +204,7 @@ function maximizeWindows{
     foreach ($p in $visibleProceses) {
         $title = $p.MainWindowTitle.trim() 
         $procName = $p.processName
-        write-host "*****************", $procName, $title
+        write-host "*****************", $procName, "*****", $title, "****", $p.id
         if ($p.processName -like "notepad*") {
             logError("MAXIMIZING visible window: $procName - $title")
             Set-WindowStyle $p 'MAXIMIZE'
@@ -212,14 +212,43 @@ function maximizeWindows{
     }
 }
 
-while ($true) {
-    Start-Sleep -s 2
+
+function minimizeAllVisibleNotAllowedWindows{
+    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
+    logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
+    foreach ($p in $visibleProceses) {
+        $title = $p.MainWindowTitle.trim() 
+        write-host "*****************", $p.ProcessName, $title, $p.id
+        if (isBlacklisted($title,$p.id)) {
+            logError("minimizing visible window: $title")
+            Set-WindowStyle $p 'MINIMIZE'
+        }
+
+    }
+}
+
+Start-Sleep -s 4
+
+#Get-Process | Where-Object {$_.ProcessName -eq 'chrome'} | Get-ChildWindow
+Write-Host "start"
+Get-Process | Where-Object {$_.id -eq 34924}| Get-ChildWindow | ? { $_.ChildTitle -ne "" } | select $_.ChildTitle
+#? { $_.ChildTitle.contains('rome')  }
+
+#Get-ChildWindow 34924
+Write-Host "end"
+
+#$p = Get-Process | Where-Object {$_.ProcessName -eq "chrome" -and $_.MainWindowTitle -ne ""}
+#Set-WindowStyle $p 'SHOWNA'
+
+#while ($true) {
+while ($false) {
+        Start-Sleep -s 8
     
     # get the activeHandle (handle of the active window)
     $ActiveHandle = [userWindows]::GetForegroundWindow()
     $p = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
     # else if the context menu has been activated in the active window (by clicking the right button of the mouse)
-    #write-host $p.processname,$p.MainWindowTitle
+    write-host $p.processname,$p.MainWindowTitle
     #$HWND = [Win32Api]::FindWindow( "OpusApp", $caption )
     #$HWND = $activeHandle
     # print pid
@@ -236,110 +265,10 @@ while ($true) {
     write-host "-------------------"
     # at this point, we have the right process and we can ask it to reactive it's main window (and to let the 
     # context menu disappear)
-    show-process $p
+    show-process $p 'SHOW'
     #Set-WindowStyle $p 'MINIMIZE'
 
+    minimizeAllVisibleNotAllowedWindows
 
-
-    
-#    if ($p.MainWindowTitle -eq)
 }
 
-
-
-<#
-write-host "sleeping and first OP"
-Start-Sleep -s 2
-$myp = Get-Process | Where-Object { $_.processName -like "notepad*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-
-Show-Process -Process $myp
-
-$myp = Get-Process | Where-Object { $_.processName -like "notepad*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-write-host "sleeping"
-Start-Sleep -s 5
-Write-Host "minimizing 1"
-minimizeWindows
-Start-Sleep -s 1
-Write-Host "minimizing 2"
-minimizeWindows
-Start-Sleep -s 1
-Write-Host "maximizing 3"
-maximizeWindows
-
-Start-Sleep -s 3
-
-$shell = New-Object -ComObject "Shell.Application"
-$shell.minimizeall()
-Start-Sleep -s 1
-$shell.undominimizeall()
-
-[System.Windows.Forms.SendKeys]::SendWait("a")
-[System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-
-Start-Sleep -s 1
-$myp = Get-Process | Where-Object { $_.processName -like "notepad*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-$myp = Get-Process | Where-Object { $_.processName -like "code*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-Start-Sleep -s 1
-$myp = Get-Process | Where-Object { $_.processName -like "notepad*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-
-
-Start-Process 'C:\windows\system32\notepad.exe'
-
-$myp = Get-Process | Where-Object { $_.processName -like "notepad*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-[void] [System.Reflection.Assembly]::LoadWithPartialName("'Microsoft.VisualBasic")
-$shell = New-Object -ComObject “Shell.Application”
-$shell.MinimizeAll()
-
-write-host "sleeping and 2nd OP"
-Start-Sleep -s 1
-$myp = Get-Process | Where-Object { $_.processName -like "deluge*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-
-write-host "sleeping and first OP"
-Start-Sleep -s 1
-$myp = Get-Process | Where-Object { $_.processName -like "notepad*" }
-write-host $myp.id, $myp.ProcessName, $myp.MainWindowHandle, $myp.MainWindowTitle
-Set-WindowStyle $myp 'MINIMIZE'
-
-
-#>
-
-#$myp = Get-Process | Where-Object { $_.id -eq $myp.id }
-#$myp
-
-<#
-Set-WindowStyle $myp 'FORCEMINIMIZE'
-Set-WindowStyle $myp 'HIDE'
-Set-WindowStyle $myp 'MAXIMIZE'
-Set-WindowStyle $myp 'MINIMIZE'
-Set-WindowStyle $myp 'RESTORE'
-Set-WindowStyle $myp 'SHOW'
-Set-WindowStyle $myp 'SHOWDEFAULT'
-Set-WindowStyle $myp 'SHOWMAXIMIZED'
-Set-WindowStyle $myp 'SHOWMINIMIZED'
-Set-WindowStyle $myp 'SHOWMINNOACTIVE'
-Set-WindowStyle $myp 'SHOWNA'
-Set-WindowStyle $myp 'SHOWNOACTIVATE'
-Set-WindowStyle $myp 'SHOWNORMAL'
-
-Get-Process | Where-Object {$_.ProcessName -like 'notepad*'} | Get-ChildWindow
-
-#>
