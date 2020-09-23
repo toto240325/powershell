@@ -1,5 +1,5 @@
 <#
-!!!!!!!! powershell get-content -tail 10 -wait \\192.168.0.2\d\temp\error.log
+!!!!!!!! powershell get-content -tail 10 -wait \\192.168.0.99\d\temp\error.log
 
 to check : 
 $VerbosePreference = “Continue”
@@ -299,7 +299,7 @@ public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 
     PROCESS {
         foreach ($process in $InputObject) {
-            write-host "test 33 : " $process.MainWindowTitle
+            #write-host "test 33 : " $process.MainWindowTitle
             $Win32ShowWindowAsync::ShowWindowAsync($process.MainWindowHandle, $WindowStates[$Style]) | Out-Null
             #Write-Verbose ("Set Window Style '{1}' on '{0}'" -f $MainWindowHandle, $Style)
         }
@@ -389,8 +389,8 @@ function isBlacklisted($title) {
         if ($blackListed) { 
             $atLeastOneTitleBlacklisted = $true
             #$titleTxt = $title
-            $errorMsg1 = "$($datetime) - Title Found : "
-            $errorMsg2 = "$title"
+            $errorMsg1 = "$($datetime) - isBlackListed true : "
+            $errorMsg2 = ">>>$title<<<"
             $errorMsg3 = " with kw : "
             $errorMsg4 = "$kw" 
             $errorMsg1 + $errorMsg2 + $errorMsg3 + $errorMsg4 | out-file -append -filepath $errorFile
@@ -436,17 +436,27 @@ function Show-Process($process, [Switch]$Maximize)
 }
 
 
+function listAllVisibleProcesses($t) {
+    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
+    foreach ($p in $visibleProceses) {
+        $title = $p.MainWindowTitle.trim() 
+        write-host "*******visible process $t : **********", $p.ProcessName, $title, $p.id
+    }
+
+}
+
 function minimizeAllVisibleNotAllowedWindows{
     $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
     logError("minimizing all visible not allowed windows  * * * * * * * * * * * * * * * * * *")
     $chromeFound = $false
     foreach ($p in $visibleProceses) {
         $title = $p.MainWindowTitle.trim() 
-        write-host "*****************", $p.ProcessName, $title, $p.id
-        if (isBlacklisted($title,$p.id)) {
-            logError("minimizing visible window: $title")
+        #write-host "*****************", $p.ProcessName, $title, $p.id
+        if (isBlacklisted($title)) {
+            logError("minimizing visible window (including on top): >>>$title<<<")
             Set-WindowStyle $p 'MINIMIZE'
         }
+
         <#
         write-host "testing chrome : $title" -BackgroundColor red
         if ($title.indexOf("Chrome") -ne -1) {
@@ -467,12 +477,22 @@ function minimizeAllVisibleNotAllowedWindowsWhichAreNotOnTop($titleTopWindow) {
     logError("title Top Window : $titleTopWindow")
     foreach ($p in $visibleProceses) {
         $title = $p.MainWindowTitle.trim() 
-        write-host "*****************", $p.ProcessName, $title, $p.id
+        #write-host "*****************", $p.ProcessName, $title, $p.id
         if ($title -ne $titleTopWindow) {
-            if (isBlacklisted($title,$p.id)) {
-                logError("minimizing visible window: $title")
+            if (isBlacklisted($title)) {
+                logError("minimizing visible window not on top : $title")
                 Set-WindowStyle $p 'MINIMIZE'
             }
+
+            # if the top window has an empty title, it's probably somebody messing aroud with the mouse over windows or
+            # using the preview of small windows in task manager etc); 
+            # if this is the case and if there is a visible vlc process, there is something fishy,so let's kill the vlc process
+            if ($title -eq "vlc") {
+                logError("killing vlc process because top title window empty : $($process.procName) - $title - $($process.id)")
+                stop-process -id $process.id -force
+            }
+
+
         }
     }
 }
@@ -550,7 +570,7 @@ function mainJob() {
     while ($true) {
         $iterationNb += 1;
         $iterationNb %= $refreshParamsRate;
-        write-host "----------------------------------------- iter:" $iterationNb
+        write-host "----------------------------------------- iter : " $iterationNb -BackgroundColor Red
         #write-host "$($datetime) - start iteration"
  
         #re-read the params file every refreshParamsRate iteration
@@ -585,8 +605,6 @@ function mainJob() {
                 exit 
             }
         }
-
-        #>
         
         # note that some params have just been reloaded from the params file and will be 
         # overwritten with the values found on the server (if the server is up)
@@ -674,11 +692,10 @@ function mainJob() {
                 #write-host $myMsg
             }
 
-            debug "get info process"
-            write-host "-----------------------" -ForegroundColor red
-
+            
             # get info on process currently executing the foreground window
             $ActiveHandle = [userWindows]::GetForegroundWindow()
+            
             #$process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
             # at this point $process is a process that might be the one owning the active window, or it could be something
             # so let's find the real process owner of the whole thread
@@ -693,21 +710,24 @@ function mainJob() {
             #"PID=" + $myPid | write-host 
         
             $process = Get-Process | Where-Object { $_.id -eq $myPid }
-            #"test 2 : process.processName : " + $process.processName + "     process.ID " +  $process.id | write-host
-            write-host "------------------"
+            logError("processname : $($process.processname)|mainwindowTitle:$($process.MainWindowTitle)|activeHandle:$ActiveHandle), pid:$($process.id)")
             # at this point, we have the right process and we can ask it to reactive it's main window (and to let the 
             # context menu disappear)
             show-process $process 'SHOW'
 
             $ActiveHandle = [userWindows]::GetForegroundWindow()
-            $process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
+            #listAllVisibleProcesses("2 : $ActiveHandle" )
+
+            # to del : $process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
         
             #check if this is a real process or a system (?) process
             $title = ""
             if ($process) { 
                 $title = $process.MainWindowTitle.trim() 
             }
-                
+           
+            #listAllVisibleProcesses("2")
+
             if ($title -ne "") {
 
                 # if we are not in the magic mode, and if the current windows is chrome, then 
@@ -722,7 +742,7 @@ function mainJob() {
                         $a = Get-Random -Minimum 7 -Maximum 12
                         For ($i = 1; $i -le $a; $i++) {
                             $rm = Get-Random -Minimum 500 -Maximum 2000
-                            if (($isGamingForbidden) -and (isBlacklisted($title,$process.id))) {
+                            if (($isGamingForbidden) -and (isBlacklisted($title))) {
                                 Set-WindowStyle $process 'MINIMIZE'
                             } else {
                                 Set-WindowStyle $process 'MAXIMIZE'
@@ -734,8 +754,15 @@ function mainJob() {
 
                 }
 
+                # if the process title is just "vlc", then it's a fake !! (meaning : someone is holding the mouse on the
+                # VLC progress bar in order for the top windows to not be minimizable, in which case it must be pitiless killed ! ;-)
+                if ($title -eq "vlc") {
+                    logError("killing process : $($process.procName) - $title - $($process.id)")
+                    stop-process -id $process.id -force
+                }
 
-                logError("current window title : ---" + $title + "+++")
+
+                #logError("current window title : ---" + $title + "+++")
                 $cpu = $process.TotalProcessorTime.TotalSeconds
                 $proc_id = $process.id
                 #write-host "cpu : " + $cpu + " proc_id : " + $proc_id
@@ -772,10 +799,8 @@ function mainJob() {
                     $procName = $p.processName
                     write-host "*****************", $procName, $title, $p.id, $p.ProcessName, $p.MainWindowHandle, $p.MainWindowTitle
                     Set-WindowStyle $p 'MINIMIZE'
-                }
-                   
+                } 
                 #>
-                
             }      
             
             $prevTitle = $title
@@ -835,7 +860,7 @@ function mainJob() {
             $line = $line + "`t {0, -25}" -f ($title.padright($maxlen + 1)).remove($maxlen)
             $line = $line + "`t {0, 5}" -f $delay
             $line | Out-File $outfile -Append
-            write-host $line
+            #write-host $line
         } 
         catch {
             $errorMsg = "$($datetime) - Error when formatting. More Info: $($_)" 
@@ -854,9 +879,13 @@ function mainJob() {
         #write-host $keywords
         #write-host $keywordsWL
 
-        $titleBlacklisted = isBlacklisted($title,$pid) 
-        write-host "title is blacklisted : " $titleBlacklisted "  pid : " $pid
- 
+        $titleBlacklisted = isBlacklisted($title) 
+        if ($title -like "*vlc*") {
+            write-host "vlc !!!!"
+        }
+
+        write-host "title is blacklisted : " $titleBlacklisted 
+
         # storing window title in database
         try {
             $datetime = get-date -format "yyyy-MM-dd HH-mm-ss.fff"
@@ -870,6 +899,7 @@ function mainJob() {
                 $conn = ConnectMySQL $user $pass $MySQLHost $database
             }
             $iRowsInsert = myInsert2 $conn $datetime $hostStr $title $cpu $delay $titleBlacklisted
+            logError(">>>>>>>> storing in DB : $title - $delay")
         }
         catch {
             $errorMsg = "$($datetime) - 101 Error when storing in database. More Info: $($_)" 
@@ -1026,6 +1056,7 @@ function mainJob() {
             minimizeAllVisibleNotAllowedWindowsWhichAreNotOnTop($title)
         }
 
+
         #else {
         # maximize window if 
         #if ($isChrome) {
@@ -1088,7 +1119,7 @@ $errorMsg | out-file -append -filepath $errorFile
 [System.Threading.Mutex]$mutant;
 try {
     [bool]$global:wasCreated = $false;
-    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle9", [ref] $global:wasCreated);        
+    $mutant = New-Object System.Threading.Mutex($true, "MyMutexGetWindowTitle11", [ref] $global:wasCreated);        
     if ($global:wasCreated) {     
         sendMail "toto240325@gmail.com" "getWindowTitle starting at $dateTime" "this is the body"       
         mainJob;

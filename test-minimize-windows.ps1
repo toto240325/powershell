@@ -1,3 +1,5 @@
+$keywords = ("petridi","io game","vlc")
+$errorFile = "d:\temp\error.log"
 
 Add-Type @"
 using System;
@@ -32,7 +34,7 @@ function logError($errorMsg) {
 #    $errorMsgfull | out-file -append -filepath $errorFile
 }
 
-function Show-Process($Process, [Switch]$Maximize)
+function Show-Process($processrocess, [Switch]$Maximize)
 {
   $sig = '
     [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
@@ -41,7 +43,7 @@ function Show-Process($Process, [Switch]$Maximize)
   
   if ($Maximize) { $Mode = 3 } else { $Mode = 5 }
   $type = Add-Type -MemberDefinition $sig -Name WindowAPI -PassThru
-  $hwnd = $process.MainWindowHandle
+  $hwnd = $processrocess.MainWindowHandle
   $null = $type::ShowWindowAsync($hwnd, $Mode)
   $null = $type::SetForegroundWindow($hwnd) 
 }
@@ -174,101 +176,59 @@ public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
     }
 
     PROCESS {
-        foreach ($process in $InputObject) {
-            write-host "test 33 : " $process.MainWindowTitle
+        foreach ($processrocess in $InputObject) {
+            write-host "test 33 : " $processrocess.MainWindowTitle
             
-            $Win32ShowWindowAsync::ShowWindowAsync($process.MainWindowHandle, $WindowStates[$Style]) # | Out-Null
+            $Win32ShowWindowAsync::ShowWindowAsync($processrocess.MainWindowHandle, $WindowStates[$Style]) # | Out-Null
             Write-Verbose ("Set Window Style '{1}' on '{0}'" -f $MainWindowHandle, $Style)
         }
-    }
-}
-
-function minimizeWindows{
-    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
-    logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
-    foreach ($p in $visibleProceses) {
-        $title = $p.MainWindowTitle.trim() 
-        $procName = $p.processName
-        write-host "*****************", $procName, $title
-        if ($p.processName -like "notepad*") {
-            logError("minimizing visible window: $procName - $title")
-            Set-WindowStyle $p 'MINIMIZE'
-        }
-    }
-}
-
-
-function maximizeWindows{
-    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
-    logError("starting to check for visible windows to be MAXIMIZED * * * * * * * * * * * * * * * * * *")
-    foreach ($p in $visibleProceses) {
-        $title = $p.MainWindowTitle.trim() 
-        $procName = $p.processName
-        write-host "*****************", $procName, "*****", $title, "****", $p.id
-        if ($p.processName -like "notepad*") {
-            logError("MAXIMIZING visible window: $procName - $title")
-            Set-WindowStyle $p 'MAXIMIZE'
-        }
-    }
-}
-
-
-function minimizeAllVisibleNotAllowedWindows{
-    $visibleProceses = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 }
-    logError("starting to check for visible windows to be minimized * * * * * * * * * * * * * * * * * *")
-    foreach ($p in $visibleProceses) {
-        $title = $p.MainWindowTitle.trim() 
-        write-host "*****************", $p.ProcessName, $title, $p.id
-        if (isBlacklisted($title,$p.id)) {
-            logError("minimizing visible window: $title")
-            Set-WindowStyle $p 'MINIMIZE'
-        }
-
     }
 }
 
 Start-Sleep -s 4
 
 #Get-Process | Where-Object {$_.ProcessName -eq 'chrome'} | Get-ChildWindow
-Write-Host "start"
-Get-Process | Where-Object {$_.id -eq 34924}| Get-ChildWindow | ? { $_.ChildTitle -ne "" } | select $_.ChildTitle
+#Write-Host "start"
+#Get-Process | Where-Object {$_.id -eq 34924}| Get-ChildWindow | ? { $_.ChildTitle -ne "" } | select $_.ChildTitle
 #? { $_.ChildTitle.contains('rome')  }
 
 #Get-ChildWindow 34924
-Write-Host "end"
+#Write-Host "end"
 
-#$p = Get-Process | Where-Object {$_.ProcessName -eq "chrome" -and $_.MainWindowTitle -ne ""}
-#Set-WindowStyle $p 'SHOWNA'
+#$process = Get-Process | Where-Object {$_.ProcessName -eq "chrome" -and $_.MainWindowTitle -ne ""}
+#Set-WindowStyle $process 'SHOWNA'
 
-#while ($true) {
-while ($false) {
-        Start-Sleep -s 8
+while ($true) {
+#while ($false) {
     
     # get the activeHandle (handle of the active window)
     $ActiveHandle = [userWindows]::GetForegroundWindow()
-    $p = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
+    $process = Get-Process | Where-Object { $_.MainWindowHandle -eq $activeHandle }
     # else if the context menu has been activated in the active window (by clicking the right button of the mouse)
-    write-host $p.processname,$p.MainWindowTitle
+    #write-host "processname : $($process.processname)|mainwindowTitle:$($process.MainWindowTitle)|activeHandle:$ActiveHandle), pid:$($process.id)"
+
     #$HWND = [Win32Api]::FindWindow( "OpusApp", $caption )
     #$HWND = $activeHandle
     # print pid
 
-    # at this point $p is a process that might be the one owning the active window, or it could be something
+    # at this point $process is a process that might be the one owning the active window, or it could be something
     # so let's find the real process owner of the whole thread
     $myPid = [IntPtr]::Zero
-    [Win32Api]::GetWindowThreadProcessId( $activeHandle, [ref] $myPid ) | out-null
-    "test 1 : p.processName : " + $p.processName + "     p.ID " +  $p.id | write-host
-    "PID=" + $myPid | write-host 
+    [Win32Api]::GetWindowThreadProcessId( $ActiveHandle, [ref] $myPid ) | out-null
+    #"test 1 : p.processName : " + $process.processName + "     p.ID " +  $process.id | write-host
+    #"PID=" + $myPid | write-host 
 
-    $p = Get-Process | Where-Object { $_.id -eq $myPid }
-    "test 2 : p.processName : " + $p.processName + "     p.ID " +  $p.id | write-host
+    $process = Get-Process | Where-Object { $_.id -eq $myPid }
+    write-host "processname : $($process.processname)|mainwindowTitle:$($process.MainWindowTitle)|activeHandle:$ActiveHandle), pid:$($process.id)"
+    #"test 2 : p.processName : " + $process.processName + "     p.ID " +  $process.id | write-host
     write-host "-------------------"
     # at this point, we have the right process and we can ask it to reactive it's main window (and to let the 
     # context menu disappear)
-    show-process $p 'SHOW'
-    #Set-WindowStyle $p 'MINIMIZE'
+    show-process $process 'SHOW'
+    #Set-WindowStyle $process 'MINIMIZE'
 
-    minimizeAllVisibleNotAllowedWindows
+    Start-Sleep -s 4
+
 
 }
 
